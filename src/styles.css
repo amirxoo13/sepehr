@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0c0d10;
+  --color-bg-elevated: #121318;
+  --color-surface: #16171e;
+  --color-surface-2: #1c1d26;
+  --color-fg: #ece8e1;
+  --color-muted: #9a958c;
+  --color-subtle: #6f6b64;
+  --color-accent: #c5cdd6;
+  --color-accent-fg: #0c0d10;
+  --color-border: color-mix(in oklab, var(--color-fg) 12%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--color-fg) 22%, transparent);
+  --color-ring: #c5cdd6;
+  --color-fire: #c4a484;
+  --color-earth: #8f9a7a;
+  --color-air: #a8b4c0;
+  --color-water: #7e8fa3;
+  --color-danger: #c17b73;
+  --color-warn: #c4a26a;
+
+  --font-display: "Vazirmatn", "Newsreader", serif;
+  --font-body: "Vazirmatn", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-fg) 10%, transparent);
+
+  --color-chart-paper: #f7f4ee;
+  --color-chart-ink: #161616;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.03em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.starfield {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, color-mix(in oklab, var(--color-fg) 35%, transparent) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 72%, color-mix(in oklab, var(--color-fg) 22%, transparent) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 67% 24%, color-mix(in oklab, var(--color-fg) 40%, transparent) 50%, transparent 51%),
+    radial-gradient(1px 1px at 81% 61%, color-mix(in oklab, var(--color-fg) 18%, transparent) 50%, transparent 51%),
+    radial-gradient(1px 1px at 44% 40%, color-mix(in oklab, var(--color-fg) 14%, transparent) 50%, transparent 51%),
+    linear-gradient(180deg, var(--color-bg), color-mix(in oklab, var(--color-bg) 92%, var(--color-fg)));
+}

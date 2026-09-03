@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Globe } from "lucide-react";
 import { t, type Locale } from "@/lib/astro/i18n";
 import { Button } from "@/components/ui/button";
+import { Cosmos } from "@/components/layout/cosmos";
+import { IconGlobeGrid, IconArmillary } from "@/components/icons/astro-icons";
 import { cn } from "@/lib/utils";
 
 const NAV: { to: string; key: "start" | "skyNow" | "about" }[] = [
@@ -20,42 +21,67 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   return (
-    <div className="flex min-h-dvh flex-col bg-bg text-fg">
-      <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur-sm">
+    <div className="relative flex min-h-dvh flex-col text-fg">
+      <Cosmos />
+
+      <header className="sticky top-0 z-30 border-b border-border bg-bg/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="font-display text-xl tracking-tight">{t(locale, "app")}</span>
-            <span className="hidden text-xs text-muted sm:inline">{t(locale, "tagline")}</span>
+          <Link to="/" className="group flex items-center gap-2.5">
+            <IconArmillary
+              size={26}
+              className="text-gold transition-transform duration-700 group-hover:rotate-180"
+            />
+            <span className="flex items-baseline gap-2">
+              <span className="foil font-display text-2xl leading-none tracking-tight">
+                {t(locale, "app")}
+              </span>
+              <span className="hidden text-xs text-muted sm:inline">{t(locale, "tagline")}</span>
+            </span>
           </Link>
+
           <nav className="flex items-center gap-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "inline-flex min-h-11 items-center rounded-md px-3 text-sm text-muted transition-colors hover:text-fg",
-                  pathname === item.to && "text-fg",
-                )}
-              >
-                {t(locale, item.key)}
-              </Link>
-            ))}
+            {NAV.map((item) => {
+              const on = pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "relative inline-flex min-h-11 items-center rounded-md px-3 text-sm transition-colors",
+                    on ? "text-gold" : "text-muted hover:text-fg",
+                  )}
+                >
+                  {t(locale, item.key)}
+                  {on && (
+                    <span className="absolute inset-x-2.5 -bottom-px h-px bg-gold shadow-[0_0_8px_var(--color-gold)]" />
+                  )}
+                </Link>
+              );
+            })}
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="language"
+              aria-label={locale === "fa" ? "تغییر زبان" : "Switch language"}
               onClick={() => onLocale(locale === "fa" ? "en" : "fa")}
             >
-              <Globe className="size-4" />
+              <IconGlobeGrid size={18} />
             </Button>
           </nav>
         </div>
+        {/* gold hairline that fades at the edges, like a sightline */}
+        <div className="rule-fade absolute inset-x-0 -bottom-px" />
       </header>
-      <div className="flex-1">{children}</div>
-      <footer className="border-t border-border px-4 py-6 text-center text-xs text-subtle">
-        {t(locale, "footer")}
+
+      <div className="relative flex-1">{children}</div>
+
+      <footer className="relative border-t border-border px-4 py-8 text-center">
+        <div className="mx-auto max-w-6xl">
+          <div className="rule-fade mb-5 opacity-60" />
+          <p className="text-xs leading-relaxed text-subtle">{t(locale, "footer")}</p>
+        </div>
       </footer>
     </div>
   );

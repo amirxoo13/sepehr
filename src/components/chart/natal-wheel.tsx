@@ -1,9 +1,25 @@
 /**
- * Astro-Seek / Astrodienst radix: white paper wheel, ASC at 9 o'clock,
- * houses counterclockwise, degree ticks, coloured glyphs, red/blue aspects.
+ * Radix wheel — ASC at 9 o'clock, houses counterclockwise.
+ *
+ * Rebuilt around a `WheelTheme` so the same geometry renders either as
+ * an engraved night plate (screen default) or as the classic
+ * Astro-Seek / Astrodienst paper radix (print / export default).
+ *
+ * What changed against the previous version, and why:
+ *  · Element-washed zodiac band. Twelve sign sectors tinted by element
+ *    give the eye an instant read on chart balance — the single most
+ *    useful thing a wheel can show before you read a single degree.
+ *  · A real degree ring. Ticks now sit in their own band with 10°
+ *    numerals, instead of biting into the sign band.
+ *  · Aspect lines weighted by exactness and drawn *under* a hub disc,
+ *    with hard/soft separated by colour and applying/separating by dash.
+ *  · Luminous glyphs (night theme) via a single reusable SVG filter —
+ *    one filter instance, not one per glyph, so it stays cheap.
+ *  · Angle markers (ASC/MC/DSC/IC) as flagged ticks outside the rim
+ *    rather than floating text.
  */
-import { useMemo, useState } from "react";
-import { ASPECT_COLOR, CHART, PLANET_COLOR, SIGN_COLOR } from "@/lib/astro/chart-theme";
+import { useId, useMemo, useState } from "react";
+import { SIGN_ELEMENT, wheelTheme, type WheelThemeName } from "@/lib/astro/chart-theme";
 import { ZODIAC_SIGNS } from "@/lib/astro/constants";
 import { eclipticLongitude, normalizeAngle, planetDisplayName } from "@/lib/astro/math";
 import type { ChartResult } from "@/lib/astro/types";
@@ -28,7 +44,15 @@ function polar(cx: number, cy: number, r: number, deg: number) {
   return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
 }
 
-function sectorPath(asc: number, startLon: number, endLon: number, r0: number, r1: number, cx: number, cy: number) {
+function sectorPath(
+  asc: number,
+  startLon: number,
+  endLon: number,
+  r0: number,
+  r1: number,
+  cx: number,
+  cy: number,
+) {
   const a0 = chartToDrawingAngle(startLon, asc);
   const a1 = chartToDrawingAngle(endLon, asc);
   const p0 = polar(cx, cy, r1, a0);
@@ -45,6 +69,7 @@ export function NatalWheel({
   compact = false,
   selected = null,
   onSelect,
+  theme: themeName = "night",
 }: {
   chart: ChartResult;
   className?: string;
@@ -52,20 +77,31 @@ export function NatalWheel({
   compact?: boolean;
   selected?: string | null;
   onSelect?: (id: string) => void;
+  theme?: WheelThemeName;
 }) {
   const [hover, setHover] = useState<string | null>(null);
+  const uid = useId().replace(/:/g, "");
+  const T = wheelTheme(themeName);
+
   const size = compact ? 560 : 840;
   const cx = size / 2;
   const cy = size / 2;
+
+  /* Radial bands, outermost first. The degree ring is new: it buys the
+     zodiac band room to breathe and gives numerals somewhere to live. */
   const R = {
-    outer: size * 0.47,
-    signInner: size * 0.392,
-    planet: size * 0.338,
-    planetIn: size * 0.302,
-    planetDeep: size * 0.266,
-    houseNum: size * 0.232,
-    aspect: size * 0.188,
+    rim: size * 0.478,
+    degOuter: size * 0.452,
+    degInner: size * 0.418,
+    signInner: size * 0.352,
+    planet: size * 0.306,
+    planetIn: size * 0.268,
+    planetDeep: size * 0.232,
+    houseNum: size * 0.202,
+    aspect: size * 0.172,
+    hub: size * 0.034,
   };
+
   const asc = chart.ascendant;
   const active = hover ?? selected;
 
@@ -81,7 +117,8 @@ export function NatalWheel({
     const t = assignTracks(spread, compact ? 16 : 13);
     drawnBodies.forEach((b, i) => {
       if (b.id === "SOUTH_NODE") t[i] = 2;
-      else if (b.id === "CHIRON" || b.id === "LILITH" || b.id === "TRUE_NODE") t[i] = Math.max(t[i] ?? 0, 1);
+      else if (b.id === "CHIRON" || b.id === "LILITH" || b.id === "TRUE_NODE")
+        t[i] = Math.max(t[i] ?? 0, 1);
     });
     return t;
   }, [spread, compact, drawnBodies]);
@@ -110,63 +147,174 @@ export function NatalWheel({
     return ids;
   }, [active, aspects]);
 
+  /* Degree ticks live in their own band now. Sign boundaries are full
+     height, 10° marks are two-thirds, singles are hairlines. */
   const ticks = useMemo(() => {
-    const marks: { x1: number; y1: number; x2: number; y2: number; w: number }[] = [];
+    const marks: { x1: number; y1: number; x2: number; y2: number; w: number; o: number }[] = [];
+    const span = R.degOuter - R.degInner;
     for (let deg = 0; deg < 360; deg++) {
       const a = chartToDrawingAngle(deg, asc);
-      const sign = deg % 30 === 0;
-      const ten = deg % 10 === 0;
-      const five = deg % 5 === 0;
-      const len = sign ? 15 : ten ? 10 : five ? 6 : 3;
-      const p0 = polar(cx, cy, R.outer, a);
-      const p1 = polar(cx, cy, R.outer - len, a);
-      marks.push({ x1: p0.x, y1: p0.y, x2: p1.x, y2: p1.y, w: sign ? 1.4 : ten ? 1 : 0.55 });
+      const inSign = deg % 30;
+      const isSign = inSign === 0;
+      const isTen = inSign % 10 === 0;
+      const isFive = inSign % 5 === 0;
+      const len = isSign ? span : isTen ? span * 0.66 : isFive ? span * 0.42 : span * 0.24;
+      const p0 = polar(cx, cy, R.degOuter, a);
+      const p1 = polar(cx, cy, R.degOuter - len, a);
+      marks.push({
+        x1: p0.x,
+        y1: p0.y,
+        x2: p1.x,
+        y2: p1.y,
+        w: isSign ? 1.5 : isTen ? 1 : 0.55,
+        o: isSign ? 1 : isTen ? 0.8 : isFive ? 0.55 : 0.3,
+      });
     }
     return marks;
-  }, [asc, cx, cy, R.outer]);
+  }, [asc, cx, cy, R.degOuter, R.degInner]);
 
-  const pad = compact ? 18 : 36;
-  const ink = CHART.ink;
+  const pad = compact ? 20 : 40;
+  const ink = T.ink;
+  const glowId = `wheel-glow-${uid}`;
+  const rimId = `wheel-rim-${uid}`;
+  const hubId = `wheel-hub-${uid}`;
 
   return (
-    <div className={cn("relative mx-auto w-full overflow-visible", compact ? "max-w-[420px]" : "max-w-[840px]", className)} dir="ltr">
+    <div
+      className={cn(
+        "relative mx-auto w-full overflow-visible",
+        compact ? "max-w-[420px]" : "max-w-[840px]",
+        className,
+      )}
+      dir="ltr"
+    >
       <svg
         id="natal-wheel"
         viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
         className="h-auto w-full overflow-visible"
         role="img"
         aria-label="Natal chart wheel"
-        style={{ background: CHART.paper }}
+        style={{ background: T.paper }}
       >
-        <circle cx={cx} cy={cy} r={R.outer + 1} fill={CHART.paper} stroke={ink} strokeWidth="1.6" />
-        <circle cx={cx} cy={cy} r={R.signInner} fill={CHART.paper} stroke={ink} strokeWidth="1.1" />
-        <circle cx={cx} cy={cy} r={R.aspect} fill={CHART.paper} stroke={ink} strokeWidth="1.1" />
+        <defs>
+          {/* One glow filter, reused by every luminous glyph. */}
+          <filter id={glowId} x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2.6" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
 
+          {/* Rim gradient: gold catching light from the upper left. */}
+          <linearGradient id={rimId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={T.rim} stopOpacity={T.luminous ? 1 : 1} />
+            <stop offset="45%" stopColor={T.rim} stopOpacity={T.luminous ? 0.5 : 1} />
+            <stop offset="100%" stopColor={T.rim} stopOpacity={T.luminous ? 0.9 : 1} />
+          </linearGradient>
+
+          {/* Hub: a soft well at the centre so aspect lines converge into
+              something rather than crossing in a tangle. */}
+          <radialGradient id={hubId}>
+            <stop offset="0%" stopColor={T.paper} stopOpacity="1" />
+            <stop offset="70%" stopColor={T.paper} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={T.paper} stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <rect x={-pad} y={-pad} width={size + pad * 2} height={size + pad * 2} fill={T.paper} />
+
+        {/* ── Rings ── */}
+        <circle cx={cx} cy={cy} r={R.rim} fill="none" stroke={`url(#${rimId})`} strokeWidth="2.2" />
+        <circle cx={cx} cy={cy} r={R.degOuter} fill="none" stroke={T.rim} strokeWidth="0.9" opacity="0.7" />
+        <circle cx={cx} cy={cy} r={R.degInner} fill="none" stroke={T.rim} strokeWidth="0.9" opacity="0.7" />
+        <circle cx={cx} cy={cy} r={R.signInner} fill="none" stroke={T.rim} strokeWidth="1.1" opacity="0.85" />
+        <circle cx={cx} cy={cy} r={R.aspect} fill="none" stroke={T.rim} strokeWidth="1" opacity="0.6" />
+
+        {/* ── Zodiac band, washed by element ── */}
         {ZODIAC_SIGNS.map((sign, i) => {
           const start = i * 30;
           const end = start + 30;
-          const mid = polar(cx, cy, (R.outer + R.signInner) / 2 - 2, chartToDrawingAngle(start + 15, asc));
+          const el = SIGN_ELEMENT[sign] ?? "fire";
+          const tint = T.element[el];
+          const mid = polar(
+            cx,
+            cy,
+            (R.degInner + R.signInner) / 2,
+            chartToDrawingAngle(start + 15, asc),
+          );
           const a0 = chartToDrawingAngle(start, asc);
-          const s0 = polar(cx, cy, R.outer, a0);
+          const s0 = polar(cx, cy, R.degInner, a0);
           const s1 = polar(cx, cy, R.signInner, a0);
           return (
             <g key={sign}>
-              <path d={sectorPath(asc, start, end, R.signInner, R.outer, cx, cy)} fill="none" />
-              <line x1={s0.x} y1={s0.y} x2={s1.x} y2={s1.y} stroke={ink} strokeWidth="1.15" />
-              <GlyphAt name={sign} x={mid.x} y={mid.y} size={compact ? 16 : 22} color={SIGN_COLOR[sign]} />
+              <path
+                d={sectorPath(asc, start, end, R.signInner, R.degInner, cx, cy)}
+                fill={tint}
+                opacity={T.luminous ? 0.11 : 0.07}
+              />
+              <line x1={s0.x} y1={s0.y} x2={s1.x} y2={s1.y} stroke={T.rim} strokeWidth="1" opacity="0.75" />
+              <GlyphAt
+                name={sign}
+                x={mid.x}
+                y={mid.y}
+                size={compact ? 17 : 24}
+                color={T.signs[sign] ?? ink}
+              />
             </g>
           );
         })}
 
-        {ticks.map((t, i) => (
-          <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke={ink} strokeWidth={t.w} />
-        ))}
+        {/* ── Degree ticks ── */}
+        <g>
+          {ticks.map((t, i) => (
+            <line
+              key={i}
+              x1={t.x1}
+              y1={t.y1}
+              x2={t.x2}
+              y2={t.y2}
+              stroke={T.rim}
+              strokeWidth={t.w}
+              opacity={t.o}
+            />
+          ))}
+        </g>
 
+        {/* 10° numerals inside the degree ring — only on the full wheel,
+            where there is room for them to stay legible. */}
+        {!compact && (
+          <g>
+            {Array.from({ length: 36 }, (_, k) => k * 10).map((deg) => {
+              const inSign = deg % 30;
+              if (inSign === 0) return null;
+              const a = chartToDrawingAngle(deg, asc);
+              const p = polar(cx, cy, (R.degOuter + R.degInner) / 2, a);
+              return (
+                <text
+                  key={deg}
+                  x={p.x}
+                  y={p.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={T.muted}
+                  fontSize="8"
+                  fontFamily="var(--font-mono)"
+                  opacity="0.75"
+                >
+                  {inSign}
+                </text>
+              );
+            })}
+          </g>
+        )}
+
+        {/* ── House cusps ── */}
         {chart.houses.map((h) => {
           const a = chartToDrawingAngle(h.cusp, asc);
           const isAngle = h.house === 1 || h.house === 4 || h.house === 7 || h.house === 10;
-          const p0 = polar(cx, cy, R.aspect, a);
-          const p1 = polar(cx, cy, isAngle ? R.outer + 10 : R.signInner, a);
+          const p0 = polar(cx, cy, R.hub, a);
+          const p1 = polar(cx, cy, isAngle ? R.rim : R.signInner, a);
           const midLon = normalizeAngle(h.cusp + 12);
           const lp = polar(cx, cy, R.houseNum, chartToDrawingAngle(midLon, asc));
           return (
@@ -176,17 +324,19 @@ export function NatalWheel({
                 y1={p0.y}
                 x2={p1.x}
                 y2={p1.y}
-                stroke={ink}
-                strokeWidth={isAngle ? 2.4 : 0.85}
+                stroke={isAngle ? T.axis : T.rim}
+                strokeWidth={isAngle ? 2.2 : 0.7}
+                opacity={isAngle ? 0.9 : 0.42}
               />
               <text
                 x={lp.x}
                 y={lp.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill={ink}
+                fill={T.muted}
                 fontSize={compact ? 10 : 13}
                 fontFamily="var(--font-mono)"
+                opacity="0.85"
               >
                 {h.house}
               </text>
@@ -194,64 +344,90 @@ export function NatalWheel({
           );
         })}
 
-        {([
-          ["ASC", chart.ascendant, 1],
-          ["MC", chart.mediumCoeli, 1],
-          ["DSC", normalizeAngle(chart.ascendant + 180), compact ? 0 : 1],
-          ["IC", normalizeAngle(chart.mediumCoeli + 180), compact ? 0 : 1],
-        ] as const)
+        {/* ── Angle flags outside the rim ── */}
+        {(
+          [
+            ["ASC", chart.ascendant, 1],
+            ["MC", chart.mediumCoeli, 1],
+            ["DSC", normalizeAngle(chart.ascendant + 180), compact ? 0 : 1],
+            ["IC", normalizeAngle(chart.mediumCoeli + 180), compact ? 0 : 1],
+          ] as const
+        )
           .filter(([, , show]) => show)
           .map(([label, lon]) => {
-            const p = polar(cx, cy, R.outer + (compact ? 12 : 20), chartToDrawingAngle(lon, asc));
+            const a = chartToDrawingAngle(lon, asc);
+            const tickOut = polar(cx, cy, R.rim + (compact ? 7 : 11), a);
+            const tickIn = polar(cx, cy, R.rim, a);
+            const p = polar(cx, cy, R.rim + (compact ? 15 : 24), a);
             const dms = fmtDegMin(((lon % 30) + 30) % 30);
             return (
-              <text
-                key={label}
-                x={p.x}
-                y={p.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill={ink}
-                fontSize={compact ? 9 : 11}
-                fontFamily="var(--font-mono)"
-                fontWeight="600"
-              >
-                {label}
-                {!compact ? ` ${dms.d}°${String(dms.m).padStart(2, "0")}` : ""}
-              </text>
+              <g key={label}>
+                <line
+                  x1={tickIn.x}
+                  y1={tickIn.y}
+                  x2={tickOut.x}
+                  y2={tickOut.y}
+                  stroke={T.axis}
+                  strokeWidth="2"
+                />
+                <text
+                  x={p.x}
+                  y={p.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={T.axis}
+                  fontSize={compact ? 9 : 11}
+                  fontFamily="var(--font-mono)"
+                  fontWeight="600"
+                  letterSpacing="0.06em"
+                >
+                  {label}
+                  {!compact ? ` ${dms.d}°${String(dms.m).padStart(2, "0")}` : ""}
+                </text>
+              </g>
             );
           })}
 
-        {aspects.map((asp, i) => {
-          const i1 = indexById[asp.planet1];
-          const i2 = indexById[asp.planet2];
-          if (i1 == null || i2 == null) return null;
-          const a1 = chartToDrawingAngle(spread[i1]!, asc);
-          const a2 = chartToDrawingAngle(spread[i2]!, asc);
-          const p1 = polar(cx, cy, R.aspect, a1);
-          const p2 = polar(cx, cy, R.aspect, a2);
-          const involved = !related || asp.planet1 === active || asp.planet2 === active;
-          const opacity = involved ? (asp.orb < 2 ? 0.95 : 0.7) : related ? 0.08 : 0.55;
-          return (
-            <line
-              key={`${asp.planet1}-${asp.planet2}-${i}`}
-              x1={p1.x}
-              y1={p1.y}
-              x2={p2.x}
-              y2={p2.y}
-              stroke={ASPECT_COLOR[asp.aspect_name] ?? CHART.muted}
-              strokeWidth={involved && related ? 1.7 : asp.orb < 2 ? 1.4 : 1}
-              strokeDasharray={asp.applying ? undefined : "3 3"}
-              opacity={opacity}
-            />
-          );
-        })}
+        {/* ── Aspect lines ── */}
+        <g>
+          {aspects.map((asp, i) => {
+            const i1 = indexById[asp.planet1];
+            const i2 = indexById[asp.planet2];
+            if (i1 == null || i2 == null) return null;
+            const a1 = chartToDrawingAngle(spread[i1]!, asc);
+            const a2 = chartToDrawingAngle(spread[i2]!, asc);
+            const p1 = polar(cx, cy, R.aspect, a1);
+            const p2 = polar(cx, cy, R.aspect, a2);
+            const involved = !related || asp.planet1 === active || asp.planet2 === active;
+            const tight = asp.orb < 2;
+            const opacity = involved ? (tight ? 0.92 : 0.62) : related ? 0.07 : 0.5;
+            return (
+              <line
+                key={`${asp.planet1}-${asp.planet2}-${i}`}
+                x1={p1.x}
+                y1={p1.y}
+                x2={p2.x}
+                y2={p2.y}
+                stroke={T.aspects[asp.aspect_name] ?? T.muted}
+                strokeWidth={involved && related ? 1.8 : tight ? 1.35 : 0.9}
+                strokeDasharray={asp.applying ? undefined : "3 3.5"}
+                strokeLinecap="round"
+                opacity={opacity}
+              />
+            );
+          })}
+        </g>
 
-        {drawnBodies.map((b, i) => {
+        {/* Hub well — softens the convergence at dead centre. */}
+        <circle cx={cx} cy={cy} r={R.hub * 2.6} fill={`url(#${hubId})`} />
+        <circle cx={cx} cy={cy} r={R.hub} fill="none" stroke={T.rim} strokeWidth="0.8" opacity="0.55" />
+
+        {/* ── True-longitude tick marks on the sign ring ── */}
+        {drawnBodies.map((b) => {
           const trueA = chartToDrawingAngle(eclipticLongitude(b), asc);
           const mark = polar(cx, cy, R.signInner, trueA);
-          const markIn = polar(cx, cy, R.signInner - 6, trueA);
-          const color = PLANET_COLOR[b.id] ?? ink;
+          const markIn = polar(cx, cy, R.signInner - 7, trueA);
+          const color = T.planets[b.id] ?? ink;
           return (
             <line
               key={`tick-${b.id}`}
@@ -260,25 +436,28 @@ export function NatalWheel({
               x2={mark.x}
               y2={mark.y}
               stroke={color}
-              strokeWidth="1.6"
+              strokeWidth="1.8"
             />
           );
         })}
 
+        {/* ── Bodies ── */}
         {drawnBodies.map((b, i) => {
           const a = chartToDrawingAngle(spread[i]!, asc);
           const trueA = chartToDrawingAngle(eclipticLongitude(b), asc);
           const radius = tracks[i] === 2 ? R.planetDeep : tracks[i] ? R.planetIn : R.planet;
           const pt = polar(cx, cy, radius, a);
-          const truePt = polar(cx, cy, R.signInner - 8, trueA);
+          const truePt = polar(cx, cy, R.signInner - 9, trueA);
           const dms = fmtDegMin(b.degree_in_sign, b.degree_minute);
           const isOn = active === b.id;
           const dimmed = Boolean(related && !related.has(b.id));
-          const color = PLANET_COLOR[b.id] ?? ink;
-          const extra = b.id === "SOUTH_NODE" || b.id === "LILITH" || b.id === "CHIRON" || b.id === "TRUE_NODE";
-          const glyphR = extra ? 9 : 11;
+          const color = T.planets[b.id] ?? ink;
+          const extra =
+            b.id === "SOUTH_NODE" || b.id === "LILITH" || b.id === "CHIRON" || b.id === "TRUE_NODE";
+          const glyphR = extra ? 9 : 11.5;
           const offset = Math.abs(normalizeAngle(spread[i]! - eclipticLongitude(b)));
           const wrap = offset > 180 ? 360 - offset : offset;
+          const luminary = b.id === "SUN" || b.id === "MOON";
           return (
             <g
               key={b.id}
@@ -294,9 +473,10 @@ export function NatalWheel({
               tabIndex={0}
               role="button"
               aria-label={`${planetDisplayName(b)} ${dms.label} ${b.sign}`}
-              className="cursor-pointer outline-none"
-              opacity={dimmed ? 0.28 : 1}
+              className="cursor-pointer outline-none transition-opacity duration-150"
+              opacity={dimmed ? 0.25 : 1}
             >
+              {/* leader line back to true longitude when the glyph was nudged */}
               {wrap > 2.5 && (
                 <line
                   x1={pt.x}
@@ -308,8 +488,31 @@ export function NatalWheel({
                   opacity="0.45"
                 />
               )}
-              <circle cx={pt.x} cy={pt.y} r={isOn ? glyphR + 3 : glyphR + 1} fill={CHART.paper} />
-              <GlyphAt name={b.id} x={pt.x} y={pt.y} size={extra ? (compact ? 13 : 16) : compact ? 15 : 19} color={color} />
+
+              {/* halo so aspect lines don't run through the glyph */}
+              <circle cx={pt.x} cy={pt.y} r={glyphR + (isOn ? 4 : 1.5)} fill={T.halo} />
+              {isOn && (
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={glyphR + 4}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth="1.1"
+                  opacity="0.85"
+                />
+              )}
+
+              <g filter={T.luminous && (luminary || isOn) ? `url(#${glowId})` : undefined}>
+                <GlyphAt
+                  name={b.id}
+                  x={pt.x}
+                  y={pt.y}
+                  size={extra ? (compact ? 13 : 16) : compact ? 15 : 20}
+                  color={color}
+                />
+              </g>
+
               {!compact && (
                 <text
                   x={pt.x}
@@ -317,13 +520,14 @@ export function NatalWheel({
                   textAnchor="middle"
                   dominantBaseline="hanging"
                   fill={color}
-                  stroke={CHART.paper}
+                  stroke={T.paper}
                   strokeWidth="3.2"
                   paintOrder="stroke"
-                  fontSize="8"
+                  fontSize="8.5"
                   fontFamily="var(--font-mono)"
                 >
-                  {dms.d}°{String(dms.m).padStart(2, "0")}{b.retrograde ? "R" : ""}
+                  {dms.d}°{String(dms.m).padStart(2, "0")}
+                  {b.retrograde ? "℞" : ""}
                 </text>
               )}
             </g>
@@ -332,26 +536,34 @@ export function NatalWheel({
       </svg>
 
       {active && !compact && (
-        <div className="mx-auto mt-2 w-fit rounded-md bg-bg-elevated px-3 py-1.5 text-xs text-fg shadow-border">
+        <div className="panel mx-auto mt-3 w-fit px-3.5 py-2 text-xs text-fg">
           {(() => {
             const b = drawnBodies.find((x) => x.id === active);
             if (!b) return null;
             const dms = fmtDegMin(b.degree_in_sign, b.degree_minute);
             const here = aspects.filter((a) => a.planet1 === active || a.planet2 === active);
             return (
-              <span className="inline-flex flex-wrap items-center gap-1.5">
-                <Glyph name={b.id} size={14} color={PLANET_COLOR[b.id] ?? CHART.ink} />
-                <span>
+              <span className="inline-flex flex-wrap items-center gap-2">
+                <Glyph name={b.id} size={15} color={T.planets[b.id] ?? T.ink} />
+                <span className="font-mono tabular-nums">
                   {planetDisplayName(b)} {dms.label} {b.sign}
                   {b.house ? ` · H${b.house}` : ""}
-                  {b.retrograde ? " Rx" : ""}
+                  {b.retrograde ? " ℞" : ""}
                 </span>
+                {here.length > 0 && <span className="h-3 w-px bg-border-strong" />}
                 {here.slice(0, 5).map((a) => {
                   const other = a.planet1 === active ? a.planet2 : a.planet1;
                   return (
-                    <span key={`${a.planet1}-${a.planet2}`} className="inline-flex items-center gap-0.5">
-                      <Glyph name={a.aspect_name} size={11} color={ASPECT_COLOR[a.aspect_name] ?? CHART.ink} />
-                      <Glyph name={other} size={12} color={PLANET_COLOR[other] ?? CHART.ink} />
+                    <span
+                      key={`${a.planet1}-${a.planet2}`}
+                      className="inline-flex items-center gap-0.5"
+                    >
+                      <Glyph
+                        name={a.aspect_name}
+                        size={11}
+                        color={T.aspects[a.aspect_name] ?? T.ink}
+                      />
+                      <Glyph name={other} size={12} color={T.planets[other] ?? T.ink} />
                     </span>
                   );
                 })}
@@ -364,11 +576,16 @@ export function NatalWheel({
   );
 }
 
-export function downloadWheelSvg(svg: SVGSVGElement | null, filename: string) {
+export function downloadWheelSvg(
+  svg: SVGSVGElement | null,
+  filename: string,
+  themeName: WheelThemeName = "night",
+) {
   if (!svg) return;
+  const T = wheelTheme(themeName);
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  clone.setAttribute("style", `background:${CHART.paper}`);
+  clone.setAttribute("style", `background:${T.paper}`);
   const blob = new Blob([`<?xml version="1.0" encoding="UTF-8"?>${clone.outerHTML}`], {
     type: "image/svg+xml;charset=utf-8",
   });

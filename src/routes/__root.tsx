@@ -12,7 +12,8 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
-      { name: "theme-color", content: "#0c0d10" },
+      { name: "theme-color", content: "#070917" },
+      { name: "color-scheme", content: "dark" },
       {
         name: "description",
         content: "Swiss Ephemeris natal, transit, synastry, composite, solar return and progressions.",
@@ -26,8 +27,12 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
+        /* Cormorant Garamond carries the Latin display voice — a garalde
+           with the high contrast of an engraved star atlas. It has no
+           Arabic coverage, so Persian headings fall through to Vazirmatn
+           (see the :lang(fa) rules in styles.css). */
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Vazirmatn:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Vazirmatn:wght@400;500;600;700&display=swap",
       },
     ],
   }),

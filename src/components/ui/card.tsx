@@ -1,10 +1,20 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Glass plate. `.panel` carries the gradient, blur, gold hairline and
+ * lift shadow; the gold top edge is a separate 1px gradient so it
+ * catches light along the top of the card the way a bevel would.
+ */
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-xl bg-surface p-4 text-fg shadow-border", className)}
+      className={cn(
+        "panel relative overflow-hidden p-5 text-fg",
+        "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px",
+        "before:bg-gradient-to-r before:from-transparent before:via-gold/45 before:to-transparent",
+        className,
+      )}
       {...props}
     />
   );
@@ -19,5 +29,5 @@ export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHead
 }
 
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-sm text-muted", className)} {...props} />;
+  return <p className={cn("text-sm leading-relaxed text-muted", className)} {...props} />;
 }

@@ -1,51 +1,101 @@
 @import "tailwindcss";
 
-@theme {
-  --color-bg: #0c0d10;
-  --color-bg-elevated: #121318;
-  --color-surface: #16171e;
-  --color-surface-2: #1c1d26;
-  --color-fg: #ece8e1;
-  --color-muted: #9a958c;
-  --color-subtle: #6f6b64;
-  --color-accent: #c5cdd6;
-  --color-accent-fg: #0c0d10;
-  --color-border: color-mix(in oklab, var(--color-fg) 12%, transparent);
-  --color-border-strong: color-mix(in oklab, var(--color-fg) 22%, transparent);
-  --color-ring: #c5cdd6;
-  --color-fire: #c4a484;
-  --color-earth: #8f9a7a;
-  --color-air: #a8b4c0;
-  --color-water: #7e8fa3;
-  --color-danger: #c17b73;
-  --color-warn: #c4a26a;
+/* ─────────────────────────────────────────────────────────────
+   سپهر — Celestial design tokens
+   Palette: deep night sky (indigo → violet → void) + observatory
+   gold + antique star-chart parchment. Inspired by 18th-century
+   celestial atlases (Bode's Uranographia, Flamsteed's Atlas).
+   ───────────────────────────────────────────────────────────── */
 
-  --font-display: "Vazirmatn", "Newsreader", serif;
+@theme {
+  /* ── ground: the night sky itself ── */
+  --color-void: #04050c;
+  --color-bg: #070917;
+  --color-bg-elevated: #0c1024;
+  --color-surface: #10142c;
+  --color-surface-2: #171c3a;
+  --color-surface-3: #1f2550;
+
+  /* ── ink ── */
+  --color-fg: #eae6f2;
+  --color-muted: #a3a0c4;
+  --color-subtle: #6f6d92;
+
+  /* ── observatory gold: the primary accent ── */
+  --color-gold: #e3b96b;
+  --color-gold-bright: #f6d999;
+  --color-gold-deep: #a97f3c;
+  --color-accent: #e3b96b;
+  --color-accent-fg: #1a1405;
+
+  /* ── secondary celestial hues ── */
+  --color-nebula: #6d5bd0;
+  --color-nebula-deep: #3a2d7a;
+  --color-aurora: #56b7a8;
+  --color-ember: #d9765a;
+
+  /* ── lines ── */
+  --color-border: color-mix(in oklab, var(--color-gold) 16%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--color-gold) 34%, transparent);
+  --color-hairline: color-mix(in oklab, var(--color-fg) 9%, transparent);
+  --color-ring: var(--color-gold);
+
+  /* ── elements (fire / earth / air / water) ── */
+  --color-fire: #e08a52;
+  --color-earth: #8fa26b;
+  --color-air: #b9a8e8;
+  --color-water: #5f9fc4;
+  --color-danger: #d9705f;
+  --color-warn: #e3b96b;
+
+  /* ── type ── */
+  --font-display: "Cormorant Garamond", "Vazirmatn", "Newsreader", serif;
   --font-body: "Vazirmatn", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
 
-  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-fg) 10%, transparent);
+  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-gold) 14%, transparent);
+  --shadow-lift: 0 1px 0 0 color-mix(in oklab, var(--color-gold) 18%, transparent) inset,
+    0 18px 48px -24px rgba(0, 0, 0, 0.9);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--color-gold) 30%, transparent),
+    0 0 34px -8px color-mix(in oklab, var(--color-gold) 40%, transparent);
 
-  --color-chart-paper: #f7f4ee;
-  --color-chart-ink: #161616;
+  /* ── chart plate ──
+     `chart-paper` / `chart-ink` are the *plate* colours used by the
+     results section, the tables and the wheel. On screen they are the
+     night plate — a white sheet punched into a dark page was the single
+     most jarring thing about the old design, and it also left several
+     glyphs (Saturn's #161616) effectively invisible. The printed
+     Astro-Seek palette still exists: it is restored wholesale under
+     @media print at the bottom of this file, and is available in TS via
+     `wheelTheme("paper")`. */
+  --color-chart-paper: #0a0d1e;
+  --color-chart-ink: #efe8d6;
+  --color-chart-print-paper: #f4efe2;
+  --color-chart-print-ink: #191410;
 }
 
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: var(--color-bg);
+    background: var(--color-void);
     color: var(--color-fg);
+    scrollbar-color: color-mix(in oklab, var(--color-gold) 30%, transparent) transparent;
   }
 
   body {
     font-family: var(--font-body);
-    background: var(--color-bg);
+    /* base sky gradient — the animated canvas layers on top of this */
+    background:
+      radial-gradient(120% 90% at 78% -10%, color-mix(in oklab, var(--color-nebula-deep) 55%, transparent), transparent 62%),
+      radial-gradient(100% 80% at 8% 110%, color-mix(in oklab, #1b3b6b 45%, transparent), transparent 58%),
+      linear-gradient(180deg, var(--color-void), var(--color-bg) 42%, var(--color-void));
+    background-attachment: fixed;
     color: var(--color-fg);
     min-height: 100dvh;
   }
@@ -53,21 +103,136 @@
   h1, h2, h3 {
     font-family: var(--font-display);
     text-wrap: balance;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.015em;
+    font-weight: 500;
   }
 
-  p {
-    text-wrap: pretty;
+  /* Persian display text needs its own tracking — Cormorant has no Arabic
+     coverage, so :lang(fa) headings fall through to Vazirmatn. */
+  :lang(fa) h1,
+  :lang(fa) h2,
+  :lang(fa) h3 {
+    letter-spacing: 0;
+    font-weight: 600;
   }
+
+  p { text-wrap: pretty; }
 
   button:not(:disabled),
-  [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
+  [role="button"]:not(:disabled) { cursor: pointer; }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+    background: color-mix(in oklab, var(--color-gold) 40%, transparent);
+    color: var(--color-fg);
   }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-gold) 22%, transparent);
+    border-radius: 99px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Celestial utilities
+   ───────────────────────────────────────────── */
+
+/* Gold foil text — used on the wordmark and section leads. */
+.foil {
+  background: linear-gradient(
+    100deg,
+    var(--color-gold-deep) 0%,
+    var(--color-gold-bright) 28%,
+    var(--color-gold) 46%,
+    var(--color-gold-bright) 64%,
+    var(--color-gold-deep) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: foil-drift 14s ease-in-out infinite;
+}
+
+@keyframes foil-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Glass panel with a gold hairline — the workhorse surface. */
+.panel {
+  position: relative;
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--color-surface) 78%, transparent),
+      color-mix(in oklab, var(--color-bg-elevated) 82%, transparent));
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: var(--shadow-lift), var(--shadow-border);
+  border-radius: var(--radius-lg);
+}
+
+/* Hairline that fades at both ends, like a sightline on an astrolabe. */
+.rule-fade {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-gold) 45%, transparent) 20%,
+    color-mix(in oklab, var(--color-gold) 45%, transparent) 80%,
+    transparent
+  );
+}
+
+/* Corner ticks — evokes the registration marks on an engraved plate. */
+.plate {
+  position: relative;
+}
+.plate::before,
+.plate::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid color-mix(in oklab, var(--color-gold) 55%, transparent);
+  pointer-events: none;
+}
+.plate::before { inset-block-start: 10px; inset-inline-start: 10px; border-inline-end: 0; border-block-end: 0; }
+.plate::after  { inset-block-end: 10px;  inset-inline-end: 10px;  border-inline-start: 0; border-block-start: 0; }
+
+/* A slow orbital rotation for decorative rings. */
+.orbit-slow { animation: orbit 220s linear infinite; transform-origin: 50% 50%; }
+.orbit-rev  { animation: orbit 340s linear infinite reverse; transform-origin: 50% 50%; }
+@keyframes orbit { to { transform: rotate(360deg); } }
+
+/* Star twinkle for individual decorative points. */
+.twinkle { animation: twinkle 4s ease-in-out infinite; }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+/* Faint drifting nebula clouds, layered behind content. */
+.nebula {
+  background:
+    radial-gradient(38% 46% at 22% 32%, color-mix(in oklab, var(--color-nebula) 34%, transparent), transparent 70%),
+    radial-gradient(42% 38% at 78% 62%, color-mix(in oklab, #2a5f8f 30%, transparent), transparent 72%),
+    radial-gradient(30% 34% at 58% 12%, color-mix(in oklab, var(--color-ember) 14%, transparent), transparent 74%);
+  filter: blur(18px);
+  animation: nebula-drift 90s ease-in-out infinite alternate;
+}
+@keyframes nebula-drift {
+  from { transform: scale(1) translate3d(0, 0, 0); opacity: 0.55; }
+  to   { transform: scale(1.14) translate3d(-2%, 1.5%, 0); opacity: 0.8; }
+}
+
+/* Gold-rimmed focus ring used across interactive elements. */
+.ring-gold:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-gold);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -78,12 +243,43 @@
   }
 }
 
-.starfield {
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, color-mix(in oklab, var(--color-fg) 35%, transparent) 50%, transparent 51%),
-    radial-gradient(1px 1px at 28% 72%, color-mix(in oklab, var(--color-fg) 22%, transparent) 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 67% 24%, color-mix(in oklab, var(--color-fg) 40%, transparent) 50%, transparent 51%),
-    radial-gradient(1px 1px at 81% 61%, color-mix(in oklab, var(--color-fg) 18%, transparent) 50%, transparent 51%),
-    radial-gradient(1px 1px at 44% 40%, color-mix(in oklab, var(--color-fg) 14%, transparent) 50%, transparent 51%),
-    linear-gradient(180deg, var(--color-bg), color-mix(in oklab, var(--color-bg) 92%, var(--color-fg)));
+/* ─────────────────────────────────────────────
+   Print — back to the engraved paper radix.
+   Astrologers print these; a dark plate would flood a page with ink and
+   the traditional red/blue aspect convention is what other readers
+   expect. So printing restores the Astro-Seek palette wholesale.
+   ───────────────────────────────────────────── */
+@media print {
+  :root {
+    --color-chart-paper: #ffffff;
+    --color-chart-ink: #111111;
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-fg: #111111;
+    --color-muted: #444444;
+  }
+  html, body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .nebula,
+  .plate::before,
+  .plate::after,
+  canvas,
+  video,
+  header,
+  footer {
+    display: none !important;
+  }
+  .panel {
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+    backdrop-filter: none !important;
+  }
+  .foil {
+    background: none !important;
+    -webkit-text-fill-color: #111 !important;
+    color: #111 !important;
+  }
 }

@@ -2,7 +2,7 @@ import type { BirthInput } from "./types";
 import { isKnownLocale } from "./languages";
 
 const KEY = "sepehr.saved-charts.v1";
-const LOCALE_KEY = "sepehr.locale";
+const LOCALE_KEY = "sepehr.locale.v2";
 const I18N_CACHE = "sepehr.i18n.v1.";
 
 export interface SavedChart {

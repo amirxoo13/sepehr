@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Compass, Orbit, Timer } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Glyph } from "@/components/chart/glyphs";
 import { NatalWheel } from "@/components/chart/natal-wheel";
 import { useLocale } from "@/components/layout/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { computeNatal, EINSTEIN } from "@/lib/astro/chart";
 import type { ChartMode } from "@/lib/astro/constants";
-import { SIGN_FA, SIGN_GLYPH, t } from "@/lib/astro/i18n";
+import { SIGN_FA, t } from "@/lib/astro/i18n";
 import { planetId } from "@/lib/astro/math";
 import type { ChartResult } from "@/lib/astro/types";
 
@@ -76,18 +77,35 @@ function Home() {
               <div className="grid grid-cols-3 gap-2 px-2 pb-3 font-mono text-xs text-chart-ink">
                 <LiveStat
                   label="ASC"
-                  value={`${Math.floor(demo.ascendant % 30)}° ${signGlyph(demo.ascendant)}`}
+                  value={
+                    <>
+                      {Math.floor(demo.ascendant % 30)}°
+                      <Glyph name={signGlyph(demo.ascendant)} size={14} />
+                    </>
+                  }
                 />
                 {sun && (
                   <LiveStat
                     label={locale === "fa" ? "خورشید" : "Sun"}
-                    value={`${Math.floor(sun.degree_in_sign)}° ${locale === "fa" ? SIGN_FA[String(sun.sign)] : sun.sign}`}
+                    value={
+                      <>
+                        {Math.floor(sun.degree_in_sign)}°
+                        <Glyph name={String(sun.sign)} size={14} />
+                        <span>{locale === "fa" ? SIGN_FA[String(sun.sign)] : sun.sign}</span>
+                      </>
+                    }
                   />
                 )}
                 {moon && (
                   <LiveStat
                     label={locale === "fa" ? "ماه" : "Moon"}
-                    value={`${Math.floor(moon.degree_in_sign)}° ${locale === "fa" ? SIGN_FA[String(moon.sign)] : moon.sign}`}
+                    value={
+                      <>
+                        {Math.floor(moon.degree_in_sign)}°
+                        <Glyph name={String(moon.sign)} size={14} />
+                        <span>{locale === "fa" ? SIGN_FA[String(moon.sign)] : moon.sign}</span>
+                      </>
+                    }
                   />
                 )}
               </div>
@@ -142,14 +160,14 @@ function Home() {
 function signGlyph(lon: number) {
   const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
   const s = signs[Math.floor((((lon % 360) + 360) % 360) / 30)]!;
-  return SIGN_GLYPH[s] ?? s;
+  return s;
 }
 
-function LiveStat({ label, value }: { label: string; value: string }) {
+function LiveStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-md bg-chart-ink/5 px-2 py-2 text-center">
       <p className="text-chart-ink/50">{label}</p>
-      <p className="mt-0.5 text-chart-ink">{value}</p>
+      <div className="mt-0.5 flex items-center justify-center gap-1 text-chart-ink">{value}</div>
     </div>
   );
 }

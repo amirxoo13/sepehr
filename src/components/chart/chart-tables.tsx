@@ -1,6 +1,6 @@
 import { ASPECT_COLOR, PLANET_COLOR } from "@/lib/astro/chart-theme";
 import { type ElementName, type ModalityName } from "@/lib/astro/constants";
-import { ASPECT_GLYPH, PLANET_GLYPH, type Locale } from "@/lib/astro/i18n";
+import { type Locale } from "@/lib/astro/i18n";
 import type { ChartResult } from "@/lib/astro/types";
 import {
   angleBodies,
@@ -11,6 +11,7 @@ import {
   wheelBodies,
 } from "@/lib/astro/wheel-data";
 import { cn } from "@/lib/utils";
+import { Glyph } from "@/components/chart/glyphs";
 
 const EL_LABEL: Record<ElementName, { fa: string; en: string; key: string }> = {
   FIRE: { fa: "آتش", en: "FIR", key: "FIR" },
@@ -57,7 +58,7 @@ export function AspectTriangle({
             <tr key={row}>
               <th className="px-1.5 py-1 text-start font-medium text-chart-ink">
                 <button type="button" className="inline-flex min-h-8 items-center gap-1" onClick={() => onSelect?.(row)}>
-                  <span style={{ color: PLANET_COLOR[row] }}>{PLANET_GLYPH[row] ?? row}</span>
+                  <Glyph name={row} size={14} color={PLANET_COLOR[row]} />
                   <span className="hidden text-chart-ink/55 sm:inline">
                     {row === "TRUE_NODE" ? "Node" : row === "ASC" ? "AC" : row[0] + row.slice(1).toLowerCase()}
                   </span>
@@ -70,7 +71,7 @@ export function AspectTriangle({
                 if (ci === ri) {
                   return (
                     <td key={col} className="min-w-9 border border-chart-ink/20 bg-chart-ink/5 px-1 py-1 text-center text-chart-ink/70">
-                      <span style={{ color: PLANET_COLOR[row] }}>{PLANET_GLYPH[row] ?? row}</span>
+                      <Glyph name={row} size={13} color={PLANET_COLOR[row]} />
                     </td>
                   );
                 }
@@ -85,7 +86,7 @@ export function AspectTriangle({
                     className="min-w-9 border border-chart-ink/20 px-1 py-1 text-center"
                     title={`${row} ${hit.aspect_name} ${col} ${hit.orb.toFixed(2)}° ${hit.applying ? "a" : "s"}`}
                   >
-                    <span style={{ color: ASPECT_COLOR[hit.aspect_name] }}>{ASPECT_GLYPH[hit.aspect_name]}</span>
+                    <Glyph name={hit.aspect_name} size={12} color={ASPECT_COLOR[hit.aspect_name]} />
                     <span className={cn("ms-0.5 tabular-nums text-chart-ink", hit.orb >= 2 && "text-chart-ink/55")}>
                       {orb}
                       <sup>{hit.applying ? "a" : "s"}</sup>
@@ -137,9 +138,7 @@ export function ElementTable({ chart, locale }: { chart: ChartResult; locale: Lo
                   <td key={md} className="p-2 text-center">
                     <span className="inline-flex flex-wrap justify-center gap-1 text-lg">
                       {cell?.ids.map((id) => (
-                        <span key={id} style={{ color: PLANET_COLOR[id] }} title={id}>
-                          {PLANET_GLYPH[id] ?? id}
-                        </span>
+                        <Glyph key={id} name={id} size={16} color={PLANET_COLOR[id]} title={id} />
                       ))}
                     </span>
                   </td>
@@ -168,9 +167,7 @@ export function DegreeStrip({ chart }: { chart: ChartResult }) {
               style={{ left: `${left}%`, transform: "translateX(-50%)", top: bump }}
               title={`${it.id} ${it.degree.toFixed(1)}° ${it.sign}`}
             >
-              <span className="text-base" style={{ color: PLANET_COLOR[it.id] }}>
-                {PLANET_GLYPH[it.id] ?? it.id}
-              </span>
+              <Glyph name={it.id} size={15} color={PLANET_COLOR[it.id]} />
               <span className="font-mono text-[10px] text-chart-ink/55">{Math.floor(it.degree)}°</span>
             </div>
           );

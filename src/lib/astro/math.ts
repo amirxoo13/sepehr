@@ -71,7 +71,7 @@ export function houseForLongitude(longitude: number, cusps: number[]): number | 
   for (let i = 0; i < 12; i++) {
     const lo = normalizeAngle(cusps[i]!);
     const hi = normalizeAngle(cusps[(i + 1) % 12]!);
-    const inHouse = lo < hi ? lo < lon && lon <= hi : lon > lo || lon <= hi;
+    const inHouse = lo < hi ? lo <= lon && lon < hi : lon >= lo || lon < hi;
     if (inHouse) return i + 1;
   }
   return null;

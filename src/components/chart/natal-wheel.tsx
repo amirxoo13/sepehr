@@ -5,7 +5,6 @@
 import { useMemo, useState } from "react";
 import { ASPECT_COLOR, CHART, PLANET_COLOR, SIGN_COLOR } from "@/lib/astro/chart-theme";
 import { ZODIAC_SIGNS } from "@/lib/astro/constants";
-import { PLANET_GLYPH, SIGN_GLYPH } from "@/lib/astro/i18n";
 import { eclipticLongitude, normalizeAngle, planetDisplayName } from "@/lib/astro/math";
 import type { ChartResult } from "@/lib/astro/types";
 import {
@@ -18,6 +17,7 @@ import {
   type WheelBody,
 } from "@/lib/astro/wheel-data";
 import { cn } from "@/lib/utils";
+import { Glyph, GlyphAt } from "@/components/chart/glyphs";
 
 function chartToDrawingAngle(lon: number, asc: number) {
   return normalizeAngle(180 - (lon - asc));
@@ -37,8 +37,6 @@ function sectorPath(asc: number, startLon: number, endLon: number, r0: number, r
   const p3 = polar(cx, cy, r0, a0);
   return `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} A ${r1} ${r1} 0 0 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} L ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} A ${r0} ${r0} 0 0 0 ${p3.x.toFixed(2)} ${p3.y.toFixed(2)} Z`;
 }
-
-const GLYPH_FONT = '"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",sans-serif';
 
 export function NatalWheel({
   chart,
@@ -155,17 +153,7 @@ export function NatalWheel({
             <g key={sign}>
               <path d={sectorPath(asc, start, end, R.signInner, R.outer, cx, cy)} fill="none" />
               <line x1={s0.x} y1={s0.y} x2={s1.x} y2={s1.y} stroke={ink} strokeWidth="1.15" />
-              <text
-                x={mid.x}
-                y={mid.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill={SIGN_COLOR[sign]}
-                fontSize={compact ? 16 : 22}
-                fontFamily={GLYPH_FONT}
-              >
-                {SIGN_GLYPH[sign]}
-              </text>
+              <GlyphAt name={sign} x={mid.x} y={mid.y} size={compact ? 16 : 22} color={SIGN_COLOR[sign]} />
             </g>
           );
         })}
@@ -321,18 +309,7 @@ export function NatalWheel({
                 />
               )}
               <circle cx={pt.x} cy={pt.y} r={isOn ? glyphR + 3 : glyphR + 1} fill={CHART.paper} />
-              <text
-                x={pt.x}
-                y={pt.y + 1}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill={color}
-                fontSize={extra ? (compact ? 12 : 15) : compact ? 14 : 18}
-                fontFamily={GLYPH_FONT}
-                fontWeight="600"
-              >
-                {PLANET_GLYPH[b.id] ?? b.name[0]}
-              </text>
+              <GlyphAt name={b.id} x={pt.x} y={pt.y} size={extra ? (compact ? 13 : 16) : compact ? 15 : 19} color={color} />
               {!compact && (
                 <text
                   x={pt.x}
@@ -362,30 +339,22 @@ export function NatalWheel({
             const dms = fmtDegMin(b.degree_in_sign, b.degree_minute);
             const here = aspects.filter((a) => a.planet1 === active || a.planet2 === active);
             return (
-              <span>
-                {PLANET_GLYPH[b.id]} {planetDisplayName(b)} {dms.label} {b.sign}
-                {b.house ? ` · H${b.house}` : ""}
-                {b.retrograde ? " Rx" : ""}
-                {here.length
-                  ? " · " +
-                    here
-                      .slice(0, 5)
-                      .map((a) => {
-                        const other = a.planet1 === active ? a.planet2 : a.planet1;
-                        const g =
-                          a.aspect_name === "SQUARE"
-                            ? "□"
-                            : a.aspect_name === "TRINE"
-                              ? "△"
-                              : a.aspect_name === "OPPOSITION"
-                                ? "☍"
-                                : a.aspect_name === "SEXTILE"
-                                  ? "⚹"
-                                  : "☌";
-                        return `${g}${PLANET_GLYPH[other] ?? other}`;
-                      })
-                      .join(" ")
-                  : ""}
+              <span className="inline-flex flex-wrap items-center gap-1.5">
+                <Glyph name={b.id} size={14} color={PLANET_COLOR[b.id] ?? CHART.ink} />
+                <span>
+                  {planetDisplayName(b)} {dms.label} {b.sign}
+                  {b.house ? ` · H${b.house}` : ""}
+                  {b.retrograde ? " Rx" : ""}
+                </span>
+                {here.slice(0, 5).map((a) => {
+                  const other = a.planet1 === active ? a.planet2 : a.planet1;
+                  return (
+                    <span key={`${a.planet1}-${a.planet2}`} className="inline-flex items-center gap-0.5">
+                      <Glyph name={a.aspect_name} size={11} color={ASPECT_COLOR[a.aspect_name] ?? CHART.ink} />
+                      <Glyph name={other} size={12} color={PLANET_COLOR[other] ?? CHART.ink} />
+                    </span>
+                  );
+                })}
               </span>
             );
           })()}

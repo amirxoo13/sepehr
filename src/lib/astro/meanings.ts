@@ -6,7 +6,7 @@
  */
 import { DETRIMENT, DOMICILE, EXALTATION, FALL } from "./constants";
 import type { Locale } from "./i18n";
-import { PLANET_FA, SIGN_FA } from "./i18n";
+import { ASPECT_FA, PLANET_FA, SIGN_FA } from "./i18n";
 import { isMainPlanet, planetId } from "./math";
 import type { ChartResult, PlanetPosition } from "./types";
 
@@ -81,7 +81,7 @@ export function planetLine(p: PlanetPosition, locale: Locale): string {
   if (!planetKey || !signKey) return "";
   const signName = locale === "fa" ? (SIGN_FA[p.sign] ?? p.sign) : p.sign;
   if (locale === "fa") {
-    return `${planet} در ${signName}${p.house ? `، خانهٔ ${p.house}` : ""}: ${planetKey.fa} از راه ${signKey.fa}${houseKey ? ` — در حوزهٔ ${houseKey.fa}` : ""}.`;
+    return `${planet} در ${signName}${p.house ? ` و خانهٔ ${p.house}` : ""} است: ${planetKey.fa} از راه ${signKey.fa} بیان می‌شود${houseKey ? ` و در حوزهٔ ${houseKey.fa} دیده می‌شود` : ""}.`;
   }
   return `${p.name} in ${p.sign}${p.house ? `, house ${p.house}` : ""}: ${planetKey.en} through ${signKey.en}${houseKey ? ` — in ${houseKey.en}` : ""}.`;
 }
@@ -98,11 +98,11 @@ export function traditionalReading(chart: ChartResult, locale: Locale): string[]
     if (!key) continue;
     const p1 = locale === "fa" ? (PLANET_FA[a.planet1] ?? a.planet1) : a.planet1;
     const p2 = locale === "fa" ? (PLANET_FA[a.planet2] ?? a.planet2) : a.planet2;
-    const an = locale === "fa" ? a.aspect_name : a.aspect_name.toLowerCase();
+    const an = locale === "fa" ? (ASPECT_FA[a.aspect_name] ?? a.aspect_name) : a.aspect_name.toLowerCase();
     lines.push(
       locale === "fa"
         ? `${p1} ${an} ${p2}: ${key.fa}.`
-        : `${p1} ${a.aspect_name.toLowerCase()} ${p2}: ${key.en}.`,
+        : `${p1} ${an} ${p2}: ${key.en}.`,
     );
   }
   return lines;

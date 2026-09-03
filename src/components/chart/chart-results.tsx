@@ -7,30 +7,22 @@ import { ChartReportView } from "@/components/chart/chart-report";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ANGLE_HOUSES } from "@/lib/astro/constants";
 import { analyzeChart } from "@/lib/astro/analyze";
-import { PLANET_COLOR } from "@/lib/astro/chart-theme";
+import { ASPECT_COLOR, PLANET_COLOR } from "@/lib/astro/chart-theme";
 import {
   ASPECT_FA,
-  ASPECT_GLYPH,
   PLANET_FA,
-  PLANET_GLYPH,
   SIGN_FA,
-  SIGN_GLYPH,
   t,
   type Locale,
 } from "@/lib/astro/i18n";
-import { dmsFromDegreeInSign, isMainPlanet, planetId, trueAspectOrb } from "@/lib/astro/math";
+import { isMainPlanet, planetId, trueAspectOrb } from "@/lib/astro/math";
 import { chartPrompt, dignityOf } from "@/lib/astro/meanings";
 import { requestReading } from "@/lib/astro/reading.functions";
 import { saveChart } from "@/lib/astro/storage";
 import type { ChartResult } from "@/lib/astro/types";
 import { wheelBodies } from "@/lib/astro/wheel-data";
 import { cn } from "@/lib/utils";
-
-function fmtPos(degreeInSign: number, sign: string, locale: Locale) {
-  const dms = dmsFromDegreeInSign(degreeInSign);
-  const s = locale === "fa" ? (SIGN_FA[sign] ?? sign) : sign;
-  return `${dms.degree}°${String(dms.minute).padStart(2, "0")}′ ${SIGN_GLYPH[sign] ?? ""} ${s}`;
-}
+import { DegreeSign, Glyph } from "@/components/chart/glyphs";
 
 function signOf(longitude: number) {
   const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
@@ -81,24 +73,24 @@ export function ChartResults({
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Meta
             label={locale === "fa" ? "طالع" : "ASC"}
-            value={fmtPos(chart.ascendant % 30, signOf(chart.ascendant), locale)}
+            value={<DegreeSign degree={chart.ascendant % 30} sign={signOf(chart.ascendant)} signName={locale === "fa" ? SIGN_FA[signOf(chart.ascendant)] : signOf(chart.ascendant)} />}
             note={locale === "fa" ? `حاکم ${PLANET_FA[analysis.chartRuler] ?? analysis.chartRuler}` : `ruler ${analysis.chartRuler}`}
           />
           <Meta
             label="MC"
-            value={fmtPos(chart.mediumCoeli % 30, signOf(chart.mediumCoeli), locale)}
+            value={<DegreeSign degree={chart.mediumCoeli % 30} sign={signOf(chart.mediumCoeli)} signName={locale === "fa" ? SIGN_FA[signOf(chart.mediumCoeli)] : signOf(chart.mediumCoeli)} />}
           />
           {sun && (
             <Meta
               label={locale === "fa" ? "خورشید" : "Sun"}
-              value={fmtPos(sun.degree_in_sign, String(sun.sign), locale)}
+              value={<DegreeSign degree={sun.degree_in_sign} minute={sun.degree_minute} sign={String(sun.sign)} signName={locale === "fa" ? SIGN_FA[String(sun.sign)] : String(sun.sign)} />}
               note={sun.house ? (locale === "fa" ? `خانه ${sun.house}` : `house ${sun.house}`) : undefined}
             />
           )}
           {moon && (
             <Meta
               label={locale === "fa" ? "ماه" : "Moon"}
-              value={fmtPos(moon.degree_in_sign, String(moon.sign), locale)}
+              value={<DegreeSign degree={moon.degree_in_sign} minute={moon.degree_minute} sign={String(moon.sign)} signName={locale === "fa" ? SIGN_FA[String(moon.sign)] : String(moon.sign)} />}
               note={moon.house ? (locale === "fa" ? `خانه ${moon.house}` : `house ${moon.house}`) : undefined}
             />
           )}
@@ -193,12 +185,19 @@ export function ChartResults({
                     onClick={() => selectPlanet(id)}
                   >
                     <td className="py-1.5 pe-2">
-                      <span className="me-1.5" style={{ color: PLANET_COLOR[id] }}>{PLANET_GLYPH[id]}</span>
+                      <span className="me-1.5 inline-flex align-middle">
+                        <Glyph name={id} size={15} color={PLANET_COLOR[id]} />
+                      </span>
                       {name}
                       {p.retrograde ? <Badge className="ms-1">Rx</Badge> : null}
                     </td>
                     <td className="py-1.5 font-mono text-xs text-muted">
-                      {fmtPos(p.degree_in_sign, String(p.sign), locale)}
+                      <DegreeSign
+                        degree={p.degree_in_sign}
+                        minute={p.degree_minute}
+                        sign={String(p.sign)}
+                        signName={locale === "fa" ? SIGN_FA[String(p.sign)] : String(p.sign)}
+                      />
                     </td>
                     <td className="py-1.5 text-end text-xs tabular-nums text-subtle">
                       {p.house ?? "—"}
@@ -219,12 +218,19 @@ export function ChartResults({
                     onClick={() => highlightPlanet(p.id)}
                   >
                     <td className="py-1.5 pe-2">
-                      <span className="me-1.5" style={{ color: PLANET_COLOR[p.id] }}>{PLANET_GLYPH[p.id]}</span>
+                      <span className="me-1.5 inline-flex align-middle">
+                        <Glyph name={p.id} size={15} color={PLANET_COLOR[p.id]} />
+                      </span>
                       {name}
                       {p.retrograde ? <Badge className="ms-1">Rx</Badge> : null}
                     </td>
                     <td className="py-1.5 font-mono text-xs text-muted">
-                      {fmtPos(p.degree_in_sign, String(p.sign), locale)}
+                      <DegreeSign
+                        degree={p.degree_in_sign}
+                        minute={p.degree_minute}
+                        sign={String(p.sign)}
+                        signName={locale === "fa" ? SIGN_FA[String(p.sign)] : String(p.sign)}
+                      />
                     </td>
                     <td className="py-1.5 text-end text-xs tabular-nums text-subtle">{p.house ?? "—"}</td>
                     <td className="hidden py-1.5 sm:table-cell" />
@@ -271,12 +277,13 @@ export function ChartResults({
                     {angle ? `${angle[1]} · ` : ""}
                     {locale === "fa" ? `خانه ${h.house}` : `House ${h.house}`}
                     {lord ? (
-                      <span className="ms-2 text-xs text-subtle">
-                        {PLANET_GLYPH[lord.ruler]} {locale === "fa" ? (PLANET_FA[lord.ruler] ?? lord.ruler) : lord.ruler}
+                      <span className="ms-2 inline-flex items-center gap-1 text-xs text-subtle">
+                        <Glyph name={lord.ruler} size={13} color={PLANET_COLOR[lord.ruler]} />
+                        {locale === "fa" ? (PLANET_FA[lord.ruler] ?? lord.ruler) : lord.ruler}
                       </span>
                     ) : null}
                   </span>
-                  <span className="font-mono text-xs">{fmtPos(h.degree_in_sign, String(h.sign), locale)}</span>
+                  <DegreeSign degree={h.degree_in_sign} sign={String(h.sign)} signName={locale === "fa" ? SIGN_FA[String(h.sign)] : String(h.sign)} />
                 </div>
               );
             })}
@@ -291,9 +298,11 @@ export function ChartResults({
               const an = locale === "fa" ? (ASPECT_FA[a.aspect_name] ?? a.aspect_name) : a.aspect_name;
               return (
                 <li key={i} className="flex items-center justify-between gap-3 py-3 text-sm">
-                  <span>
-                    <span className="me-2 text-muted">{ASPECT_GLYPH[a.aspect_name]}</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Glyph name={a.aspect_name} size={14} color={ASPECT_COLOR[a.aspect_name]} />
+                    <Glyph name={a.planet1} size={14} color={PLANET_COLOR[a.planet1]} />
                     {p1} {an} {p2}
+                    <Glyph name={a.planet2} size={14} color={PLANET_COLOR[a.planet2]} />
                   </span>
                   <span className="font-mono text-xs text-muted tabular-nums">
                     {Math.floor(orb)}°{String(Math.floor((orb % 1) * 60)).padStart(2, "0")}′
@@ -327,11 +336,11 @@ export function ChartResults({
   );
 }
 
-function Meta({ label, value, note }: { label: string; value: string; note?: string }) {
+function Meta({ label, value, note }: { label: string; value: React.ReactNode; note?: string }) {
   return (
     <div className="rounded-lg bg-surface-2 px-3 py-2">
       <p className="text-xs text-subtle">{label}</p>
-      <p className="mt-0.5 font-mono text-xs">{value}</p>
+      <div className="mt-0.5 font-mono text-xs">{value}</div>
       {note ? <p className="mt-0.5 text-xs text-subtle">{note}</p> : null}
     </div>
   );

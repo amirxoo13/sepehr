@@ -35,11 +35,8 @@ import {
 import type { Locale } from "./i18n";
 import {
   ASPECT_FA,
-  ASPECT_GLYPH,
   PLANET_FA,
-  PLANET_GLYPH,
   SIGN_FA,
-  SIGN_GLYPH,
 } from "./i18n";
 import { angularDistance, isMainPlanet, planetId, trueAspectOrb } from "./math";
 import { dignityOf, type Dignity } from "./meanings";
@@ -132,12 +129,9 @@ function aspectLinesFor(id: string, chart: ChartResult, locale: Locale, synastry
       const n1 = locPlanet(p1, locale);
       const n2 = locPlanet(p2, locale);
       const an = locAspect(aspect, locale);
-      const glyph = ASPECT_GLYPH[aspect] ?? "";
       const title = synastry
-        ? locale === "fa"
-          ? `${n1} ${an} ${n2}`
-          : `${n1} ${an} ${n2}`
-        : `${glyph} ${locPlanet(other, locale)}`;
+        ? `${n1} ${an} ${n2}`
+        : `${an} ${locPlanet(other, locale)}`;
       return {
         id: `${p1}-${aspect}-${p2}`,
         title,
@@ -170,7 +164,6 @@ function planetBlock(
   const dig = dignityOf(id, sign);
   const name = locPlanet(id, locale);
   const signName = locSign(sign, locale);
-  const glyph = PLANET_GLYPH[id] ?? "";
   const house = p.house;
   const core = pick(PLANET_CORE[id], locale);
   const signText = pick(PLANET_IN_SIGN[id]?.[sign], locale);
@@ -185,10 +178,10 @@ function planetBlock(
 
   const title =
     locale === "fa"
-      ? `${glyph} ${name} در ${signName}${house ? `، خانهٔ ${house}` : ""}`
-      : `${glyph} ${name} in ${sign}${house ? ` · house ${house}` : ""}`;
+      ? `${name} در ${signName}${house ? `، خانهٔ ${house}` : ""}`
+      : `${name} in ${sign}${house ? ` · house ${house}` : ""}`;
 
-  const meta = `${fmtDms(p)} ${SIGN_GLYPH[sign] ?? ""} · ${dignityWord(dig, locale)}${p.retrograde ? (locale === "fa" ? " · راجع" : " · Rx") : ""}`;
+  const meta = `${fmtDms(p)} · ${dignityWord(dig, locale)}${p.retrograde ? (locale === "fa" ? " · راجع" : " · Rx") : ""}`;
 
   const extra: string[] = [];
   if (isRuler) {
@@ -242,12 +235,11 @@ function aspectBlock(a: AspectData, locale: Locale, synastry: boolean): ReportBl
   const n1 = locPlanet(p1, locale);
   const n2 = locPlanet(p2, locale);
   const an = locAspect(aspect, locale);
-  const glyph = ASPECT_GLYPH[aspect] ?? "";
   const title = synastry
     ? locale === "fa"
       ? `${n1} (نفر اول) ${an} ${n2} (نفر دوم)`
       : `${n1} (person 1) ${an} ${n2} (person 2)`
-    : `${PLANET_GLYPH[p1] ?? ""} ${n1} ${glyph} ${n2} ${PLANET_GLYPH[p2] ?? ""}`;
+    : `${n1} ${an} ${n2}`;
   const tightness =
     orb < 1
       ? locale === "fa"
@@ -395,7 +387,7 @@ export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
     id: "ASC",
     kicker: locale === "fa" ? "زاویه" : "Angle",
     title: locale === "fa" ? `طالع ${locSign(a.ascSign, locale)}` : `${a.ascSign} rising`,
-    meta: `${fmtLon(ascDeg)} ${SIGN_GLYPH[a.ascSign] ?? ""} · ${locale === "fa" ? `دهک ${a.decan.face}، وجه ${locPlanet(a.decan.ruler, locale)}` : `decan ${a.decan.face}, face ${locPlanet(a.decan.ruler, locale)}`}`,
+    meta: `${fmtLon(ascDeg)} · ${locale === "fa" ? `دهک ${a.decan.face}، وجه ${locPlanet(a.decan.ruler, locale)}` : `decan ${a.decan.face}, face ${locPlanet(a.decan.ruler, locale)}`}`,
     body: [
       pick(RISING[a.ascSign], locale),
       locale === "fa"
@@ -414,7 +406,7 @@ export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
     id: "MC",
     kicker: locale === "fa" ? "زاویه" : "Angle",
     title: locale === "fa" ? `وسط‌السماء ${locSign(a.mcSign, locale)}` : `MC in ${a.mcSign}`,
-    meta: `${fmtLon(mcDeg)} ${SIGN_GLYPH[a.mcSign] ?? ""}`,
+    meta: fmtLon(mcDeg),
     body: [
       pick(MC_SIGN[a.mcSign], locale),
       mcLord
@@ -457,8 +449,8 @@ export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
     const occLines = occupants.map((p) => {
       const id = planetId(p);
       return locale === "fa"
-        ? `${PLANET_GLYPH[id] ?? ""} ${locPlanet(id, locale)} ${fmtDms(p)} ${locSign(String(p.sign), locale)}`
-        : `${PLANET_GLYPH[id] ?? ""} ${locPlanet(id, locale)} ${fmtDms(p)} ${p.sign}`;
+        ? `${locPlanet(id, locale)} ${fmtDms(p)} ${locSign(String(p.sign), locale)}`
+        : `${locPlanet(id, locale)} ${fmtDms(p)} ${p.sign}`;
     });
     const lordLine = lord
       ? locale === "fa"
@@ -472,7 +464,7 @@ export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
         locale === "fa"
           ? `خانهٔ ${h.house}${angle ? ` · ${angle}` : ""} — ${locSign(String(h.sign), locale)}`
           : `House ${h.house}${angle ? ` · ${angle}` : ""} — ${h.sign}`,
-      meta: `${Math.floor(h.degree_in_sign)}°${String(Math.floor((h.degree_in_sign % 1) * 60)).padStart(2, "0")}′ ${SIGN_GLYPH[String(h.sign)] ?? ""}${occupants.length ? ` · ${names}` : locale === "fa" ? " · خالی از سیارهٔ کلاسیک" : " · no classical planet"}`,
+      meta: `${Math.floor(h.degree_in_sign)}°${String(Math.floor((h.degree_in_sign % 1) * 60)).padStart(2, "0")}′${occupants.length ? ` · ${names}` : locale === "fa" ? " · خالی از سیارهٔ کلاسیک" : " · no classical planet"}`,
       body: [
         pick(HOUSE_THEME[h.house], locale),
         lordLine,
@@ -533,7 +525,7 @@ export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
           ? "امتیاز از حاکم طالع، خورشید/ماه، شأن بطلمیوسی، زاویه‌ای بودن و تعداد جنبه‌ها ساخته می‌شود — نه از شهرت عام."
           : "Scores are built from chart ruler, Sun/Moon, Ptolemaic dignity, angularity and aspect count — not from popular reputation.",
         a.scores
-          .map((s) => `${PLANET_GLYPH[s.planet] ?? ""} ${locPlanet(s.planet, locale)} ${s.score.toFixed(1)}`)
+          .map((s) => `${locPlanet(s.planet, locale)} ${s.score.toFixed(1)}`)
           .join(locale === "fa" ? " · " : " · "),
       ],
     });

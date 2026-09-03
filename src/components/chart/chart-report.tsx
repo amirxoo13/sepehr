@@ -1,17 +1,16 @@
 import { buildReport, type ReportBlock } from "@/lib/astro/report";
 import {
-  ASPECT_GLYPH,
   PLANET_FA,
-  PLANET_GLYPH,
   SIGN_FA,
-  SIGN_GLYPH,
   t,
   type Locale,
 } from "@/lib/astro/i18n";
 import { MAIN_PLANET_IDS } from "@/lib/astro/constants";
+import { PLANET_COLOR, SIGN_COLOR } from "@/lib/astro/chart-theme";
 import { trueAspectOrb } from "@/lib/astro/math";
 import type { ChartResult } from "@/lib/astro/types";
 import { cn } from "@/lib/utils";
+import { Glyph } from "@/components/chart/glyphs";
 
 function scrollToId(id: string) {
   const el = document.getElementById(id);
@@ -44,7 +43,8 @@ function Dossier({
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-xs tracking-wide text-subtle">{block.kicker}</p>
-          <h3 className="font-display text-xl tracking-tight">
+          <h3 className="flex items-center gap-2 font-display text-xl tracking-tight">
+            {pid ? <Glyph name={pid} size={20} color={PLANET_COLOR[pid]} /> : null}
             {pid && onSelect ? (
               <button
                 type="button"
@@ -77,12 +77,14 @@ function Dossier({
               <li key={a.id} className="grid gap-1 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] sm:items-start">
                 <button
                   type="button"
-                  className="text-start font-mono text-xs text-fg"
+                  className="inline-flex items-center gap-1 text-start font-mono text-xs text-fg"
                   onClick={() => {
                     onSelect?.(a.other);
                     scrollToId(`planet-${a.other}`);
                   }}
                 >
+                  <Glyph name={a.aspect} size={13} />
+                  <Glyph name={a.other} size={13} color={PLANET_COLOR[a.other]} />
                   {a.title}
                 </button>
                 <p className="text-sm leading-relaxed text-muted">{a.body}</p>
@@ -103,13 +105,6 @@ function AspectGrid({ chart, locale }: { chart: ChartResult; locale: Locale }) {
     const key = [a.planet1, a.planet2].map((x) => x.toUpperCase()).sort().join("-");
     byPair.set(key, { name: String(a.aspect_name), orb: trueAspectOrb(a) });
   }
-  const glyph: Record<string, string> = {
-    CONJUNCTION: "☌",
-    OPPOSITION: "☍",
-    TRINE: "△",
-    SQUARE: "□",
-    SEXTILE: "⚹",
-  };
   return (
     <div className="overflow-x-auto rounded-xl bg-surface p-4 shadow-border">
       <table className="w-full min-w-[420px] border-collapse text-center font-mono text-xs">
@@ -118,7 +113,7 @@ function AspectGrid({ chart, locale }: { chart: ChartResult; locale: Locale }) {
             <th className="p-1" />
             {ids.map((id) => (
               <th key={id} className="p-1 font-medium text-muted">
-                {PLANET_GLYPH[id]}
+                <Glyph name={id} size={14} color={PLANET_COLOR[id]} />
               </th>
             ))}
           </tr>
@@ -126,7 +121,9 @@ function AspectGrid({ chart, locale }: { chart: ChartResult; locale: Locale }) {
         <tbody>
           {ids.map((row, ri) => (
             <tr key={row}>
-              <th className="p-1 text-start font-medium text-muted">{PLANET_GLYPH[row]}</th>
+              <th className="p-1 text-start font-medium text-muted">
+                <Glyph name={row} size={14} color={PLANET_COLOR[row]} />
+              </th>
               {ids.map((col, ci) => {
                 if (ci <= ri) {
                   return (
@@ -145,7 +142,7 @@ function AspectGrid({ chart, locale }: { chart: ChartResult; locale: Locale }) {
                     className={cn("p-1", tight ? "text-fg" : "text-muted")}
                     title={`${row} ${hit.name} ${col} (${hit.orb.toFixed(2)}°)`}
                   >
-                    {glyph[hit.name] ?? ""}
+                    <Glyph name={hit.name} size={13} />
                   </td>
                 );
               })}
@@ -216,7 +213,10 @@ function HouseLordTable({
                 </a>
               </td>
               <td className="py-2.5 font-mono text-xs">
-                {SIGN_GLYPH[h.cuspSign]} {locale === "fa" ? (SIGN_FA[h.cuspSign] ?? h.cuspSign) : h.cuspSign}
+                <span className="inline-flex items-center gap-1">
+                  <Glyph name={h.cuspSign} size={14} color={SIGN_COLOR[h.cuspSign]} />
+                  {locale === "fa" ? (SIGN_FA[h.cuspSign] ?? h.cuspSign) : h.cuspSign}
+                </span>
               </td>
               <td className="py-2.5">
                 <button
@@ -224,13 +224,16 @@ function HouseLordTable({
                   className="inline-flex items-center gap-1"
                   onClick={() => scrollToId(`planet-${h.ruler}`)}
                 >
-                  <span className="text-muted">{PLANET_GLYPH[h.ruler]}</span>
+                  <Glyph name={h.ruler} size={14} color={PLANET_COLOR[h.ruler]} />
                   {locale === "fa" ? (PLANET_FA[h.ruler] ?? h.ruler) : h.ruler[0] + h.ruler.slice(1).toLowerCase()}
                 </button>
               </td>
               <td className="py-2.5 font-mono text-xs text-muted">
-                {SIGN_GLYPH[h.rulerSign]} {locale === "fa" ? (SIGN_FA[h.rulerSign] ?? h.rulerSign) : h.rulerSign}
-                {h.rulerHouse ? ` · ${locale === "fa" ? "خ" : "H"}${h.rulerHouse}` : ""}
+                <span className="inline-flex items-center gap-1 font-mono text-xs text-muted">
+                  <Glyph name={h.rulerSign} size={14} color={SIGN_COLOR[h.rulerSign]} />
+                  {locale === "fa" ? (SIGN_FA[h.rulerSign] ?? h.rulerSign) : h.rulerSign}
+                  {h.rulerHouse ? ` · ${locale === "fa" ? "خ" : "H"}${h.rulerHouse}` : ""}
+                </span>
               </td>
               <td className="py-2.5 text-xs text-subtle">{dig(h.dignity)}</td>
             </tr>

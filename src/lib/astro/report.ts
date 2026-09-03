@@ -142,11 +142,21 @@ function aspectLinesFor(id: string, chart: ChartResult, locale: Locale, synastry
       const title = synastry
         ? `${n1} ${an} ${n2}`
         : `${an} ${locPlanet(other, locale)}`;
+      const motion =
+        a.applying === true
+          ? locale === "fa"
+            ? " · در حال اعمال"
+            : " · applying"
+          : a.applying === false
+            ? locale === "fa"
+              ? " · در حال جدایی"
+              : " · separating"
+            : "";
       return {
         id: `${p1}-${aspect}-${p2}`,
         title,
         body: specific || nature,
-        meta: fmtOrb(orb),
+        meta: `${fmtOrb(orb)}${motion}`,
         other,
         aspect,
       };
@@ -192,7 +202,7 @@ function planetBlock(
     `${name} در ${signName}${house ? `، خانهٔ ${house}` : ""}`,
   );
 
-  const meta = `${fmtDms(p)} · ${dignityWord(dig, locale)}${p.retrograde ? (locale === "fa" ? " · راجع" : " · Rx") : ""}`;
+  const meta = `${fmtDms(p)} · ${dignityWord(dig, locale)}${p.retrograde ? (locale === "fa" ? " · راجع" : " · Rx") : ""} · ${p.speed.toFixed(3)}°/d`;
 
   const extra: string[] = [];
   if (isRuler) {
@@ -271,7 +281,13 @@ function aspectBlock(a: AspectData, locale: Locale, synastry: boolean): ReportBl
             "ارب تنگ است؛ گفتگوی دو سیاره در زندگی روزمره شنیده می‌شود.",
           )
         : "";
-  const body = [specific || nature, tightness].filter(Boolean);
+  const motion =
+    a.applying === true
+      ? say(locale, "The aspect is applying (tightening).", "جنبه در حال اعمال است (تنگ‌تر می‌شود).")
+      : a.applying === false
+        ? say(locale, "The aspect is separating (widening).", "جنبه در حال جدایی است (باز می‌شود).")
+        : "";
+  const body = [specific || nature, tightness, motion].filter(Boolean);
   return {
     id: `${p1}-${aspect}-${p2}`,
     kicker: locale === "fa" ? "جنبه" : "Aspect",

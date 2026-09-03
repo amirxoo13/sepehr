@@ -33,6 +33,7 @@ export interface AspectData {
   exactness: number;
   planet1_longitude: number;
   planet2_longitude: number;
+  applying?: boolean;
 }
 
 export interface BirthInput {

@@ -10,6 +10,8 @@ export const CITIES: City[] = [
   { name: "Karaj", nameFa: "کرج", country: "Iran", countryFa: "ایران", lat: 35.8406, lon: 50.9391, tz: "Asia/Tehran" },
   { name: "Qom", nameFa: "قم", country: "Iran", countryFa: "ایران", lat: 34.6401, lon: 50.8764, tz: "Asia/Tehran" },
   { name: "Ahvaz", nameFa: "اهواز", country: "Iran", countryFa: "ایران", lat: 31.3183, lon: 48.6706, tz: "Asia/Tehran" },
+  { name: "Andimeshk", nameFa: "اندیمشک", country: "Iran", countryFa: "ایران", lat: 32.4667, lon: 48.35, tz: "Asia/Tehran" },
+  { name: "Dezful", nameFa: "دزفول", country: "Iran", countryFa: "ایران", lat: 32.3831, lon: 48.4236, tz: "Asia/Tehran" },
   { name: "Kermanshah", nameFa: "کرمانشاه", country: "Iran", countryFa: "ایران", lat: 34.3142, lon: 47.065, tz: "Asia/Tehran" },
   { name: "Urmia", nameFa: "ارومیه", country: "Iran", countryFa: "ایران", lat: 37.5527, lon: 45.0761, tz: "Asia/Tehran" },
   { name: "Rasht", nameFa: "رشت", country: "Iran", countryFa: "ایران", lat: 37.2808, lon: 49.5832, tz: "Asia/Tehran" },

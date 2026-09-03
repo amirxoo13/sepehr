@@ -4,9 +4,10 @@ import { Cosmos } from "@/components/layout/cosmos";
 import { IconArmillary } from "@/components/icons/astro-icons";
 import { cn } from "@/lib/utils";
 
-const NAV: { to: string; key: "start" | "skyNow" | "about" }[] = [
+const NAV: { to: string; key: "start" | "skyNow" | "numbers" | "about" }[] = [
   { to: "/chart", key: "start" },
   { to: "/now", key: "skyNow" },
+  { to: "/numerology", key: "numbers" },
   { to: "/about", key: "about" },
 ];
 
@@ -28,7 +29,7 @@ export function Shell({
       <Cosmos />
 
       <header className="sticky top-0 z-30 border-b border-border bg-bg/92">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
           <Link to="/" className="group flex items-center gap-2.5">
             <IconArmillary
               size={26}
@@ -42,7 +43,7 @@ export function Shell({
             </span>
           </Link>
 
-          <nav className="flex items-center gap-2">
+          <nav className="flex flex-wrap items-center gap-1 sm:gap-2">
             {NAV.map((item) => {
               const on = pathname === item.to;
               return (
@@ -50,7 +51,7 @@ export function Shell({
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    "relative inline-flex min-h-11 items-center rounded-md px-3 text-sm transition-colors",
+                    "relative inline-flex min-h-11 items-center rounded-md px-2 text-sm transition-colors sm:px-3",
                     on ? "text-gold" : "text-muted hover:text-fg",
                   )}
                 >

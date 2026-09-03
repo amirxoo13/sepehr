@@ -177,6 +177,7 @@ export function toAspectData(a: WheelAspect): AspectData {
     exactness: a.orb,
     planet1_longitude: a.planet1_longitude,
     planet2_longitude: a.planet2_longitude,
+    applying: a.applying,
   };
 }
 

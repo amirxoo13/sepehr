@@ -207,3 +207,15 @@ export function IconArrowLead({ rtl, ...p }: IconProps & { rtl?: boolean }) {
     </Frame>
   );
 }
+
+/** Pythagorean / Lo Shu 3×3 — used for the numbers studio. */
+export function IconGrid(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <rect x="4.2" y="4.2" width="15.6" height="15.6" rx="1.4" />
+      <path d="M4.2 9.4h15.6M4.2 14.6h15.6M9.4 4.2v15.6M14.6 4.2v15.6" />
+      <circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none" />
+    </Frame>
+  );
+}
+

@@ -1,6 +1,6 @@
 import { toGregorian, toJalaali } from "jalaali-js";
 import { useMemo, useState } from "react";
-import { EINSTEIN, SHIRAZ_1970 } from "@/lib/astro/chart";
+import { EINSTEIN, SHIRAZ_1970, BEHNOUSH } from "@/lib/astro/chart";
 import { CITIES, looksLikeCoordinates, parseCoordinates, searchCities } from "@/lib/astro/cities";
 import { HOUSE_SYSTEMS, type ChartMode, type HouseSystemId } from "@/lib/astro/constants";
 import { geocodePlace } from "@/lib/astro/geocode.functions";
@@ -392,6 +392,9 @@ export function BirthForm({
   function applyShiraz() {
     setA(fromInput(SHIRAZ_1970));
   }
+  function applyBehnoush() {
+    setA(fromInput(BEHNOUSH));
+  }
 
   const needsAsOf = mode === "transit" || mode === "progressed";
   const needsYear = mode === "solar_return";
@@ -449,6 +452,9 @@ export function BirthForm({
         </Button>
         <Button type="button" variant="secondary" onClick={applyShiraz}>
           {t(locale, "shirazDemo")}
+        </Button>
+        <Button type="button" variant="secondary" onClick={applyBehnoush}>
+          {t(locale, "behnoushDemo")}
         </Button>
       </div>
     </form>

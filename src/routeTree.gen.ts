@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as ChartRouteImport } from './routes/chart'
 import { Route as NowRouteImport } from './routes/now'
+import { Route as NumerologyRouteImport } from './routes/numerology'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const NowRoute = NowRouteImport.update({
   path: '/now',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NumerologyRoute = NumerologyRouteImport.update({
+  id: '/numerology',
+  path: '/numerology',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/chart': typeof ChartRoute
   '/now': typeof NowRoute
+  '/numerology': typeof NumerologyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/chart': typeof ChartRoute
   '/now': typeof NowRoute
+  '/numerology': typeof NumerologyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/chart': typeof ChartRoute
   '/now': typeof NowRoute
+  '/numerology': typeof NumerologyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/chart' | '/now'
+  fullPaths: '/' | '/about' | '/chart' | '/now' | '/numerology'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/chart' | '/now'
-  id: '__root__' | '/' | '/about' | '/chart' | '/now'
+  to: '/' | '/about' | '/chart' | '/now' | '/numerology'
+  id: '__root__' | '/' | '/about' | '/chart' | '/now' | '/numerology'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ChartRoute: typeof ChartRoute
   NowRoute: typeof NowRoute
+  NumerologyRoute: typeof NumerologyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/numerology': {
+      id: '/numerology'
+      path: '/numerology'
+      fullPath: '/numerology'
+      preLoaderRoute: typeof NumerologyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ChartRoute: ChartRoute,
   NowRoute: NowRoute,
+  NumerologyRoute: NumerologyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

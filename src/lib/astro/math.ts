@@ -106,6 +106,19 @@ export function calculateAspectOrb(lon1: number, lon2: number, targetAngle: numb
   return Math.abs(angularDistance(lon1, lon2) - targetAngle);
 }
 
+/** True if the aspect is tightening one day later (speed in °/day). */
+export function aspectIsApplying(
+  lon1: number,
+  spd1: number,
+  lon2: number,
+  spd2: number,
+  ideal: number,
+): boolean {
+  const now = Math.abs(angularDistance(lon1, lon2) - ideal);
+  const later = Math.abs(angularDistance(lon1 + spd1, lon2 + spd2) - ideal);
+  return later + 1e-9 < now;
+}
+
 /**
  * Degrees from exact. AspectData.orb from the API is remaining allowance
  * (orb_width - diff), not the astrologer's 'orb from exact'.
@@ -149,6 +162,7 @@ export function findAspects(positions: PlanetPosition[], maxOrbScale = 1.0): Asp
             exactness: round4(maxOrb - diff),
             planet1_longitude: round6(lon1),
             planet2_longitude: round6(lon2),
+            applying: aspectIsApplying(lon1, p1.speed, lon2, p2.speed, ideal),
           });
         }
       });
@@ -184,6 +198,7 @@ export function crossAspects(
             exactness: round4(maxOrbDegrees - diff),
             planet1_longitude: round6(lon1),
             planet2_longitude: round6(lon2),
+            applying: aspectIsApplying(lon1, p1.speed, lon2, p2.speed, ideal),
           });
         }
       });

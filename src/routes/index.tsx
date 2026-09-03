@@ -8,6 +8,7 @@ import {
   IconArrowLead,
   IconBiWheel,
   IconEcliptic,
+  IconGrid,
   IconMidpoint,
   IconSextant,
   IconSolarReturn,
@@ -106,6 +107,12 @@ function Home() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
+                <Link to="/numerology">
+                  <IconGrid size={17} />
+                  {t(locale, "numbers")}
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
                 <Link to="/now">
                   <IconSextant size={17} />
                   {t(locale, "skyNow")}
@@ -183,7 +190,7 @@ function Home() {
 
       {/* ── Three pillars ───────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-10">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Feature
             icon={IconArmillary}
             title={t(locale, "featureNatal")}
@@ -198,6 +205,11 @@ function Home() {
             icon={IconTimeGlass}
             title={t(locale, "featureTime")}
             body={t(locale, "featureTimeD")}
+          />
+          <Feature
+            icon={IconGrid}
+            title={t(locale, "featureNumbers")}
+            body={t(locale, "featureNumbersD")}
           />
         </div>
       </section>

@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { NatalWheel, downloadWheelSvg } from "@/components/chart/natal-wheel";
 import { AspectTriangle, ChartSheetHeader, DegreeStrip, ElementTable } from "@/components/chart/chart-tables";
 import { ChartReportView } from "@/components/chart/chart-report";
+import { CopyDataButton, NumerologyReportView } from "@/components/chart/numerology-report";
 import { useLocale } from "@/components/layout/locale-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ANGLE_HOUSES } from "@/lib/astro/constants";
 import { analyzeChart } from "@/lib/astro/analyze";
 import { ASPECT_COLOR, PLANET_COLOR } from "@/lib/astro/chart-theme";
+import { formatChartDump, formatSpeed, lstFromJulianDay } from "@/lib/astro/export";
 import {
   ASPECT_NAME,
   PLANET_NAME,
@@ -17,6 +19,7 @@ import {
   type Locale,
 } from "@/lib/astro/i18n";
 import { isMainPlanet, planetId, trueAspectOrb } from "@/lib/astro/math";
+import { numerologyOf } from "@/lib/astro/numerology";
 import { chartPrompt, dignityOf } from "@/lib/astro/meanings";
 import { requestReading } from "@/lib/astro/reading.functions";
 import { saveChart } from "@/lib/astro/storage";
@@ -51,6 +54,9 @@ export function ChartResults({
   const sun = analysis.sun;
   const moon = analysis.moon;
   const extras = wheelBodies(chart).filter((b) => !isMainPlanet(b) && b.id !== "SOUTH_NODE" && b.id !== "FORTUNE");
+  const numbers = numerologyOf(chart.subject.date, undefined, chart.subject.name);
+  const dump = formatChartDump(chart, numbers);
+  const lst = lstFromJulianDay(chart.julianDay, chart.subject.longitude);
 
   useEffect(() => {
     void ensure(chart.notes);
@@ -130,6 +136,7 @@ export function ChartResults({
           >
             {t(locale, "downloadSvg")}
           </Button>
+          <CopyDataButton text={dump} locale={locale} />
           <Button
             type="button"
             variant="ghost"
@@ -172,6 +179,7 @@ export function ChartResults({
                 <th className="py-1.5 font-medium">{t(locale, "planets")}</th>
                 <th className="py-1.5 font-medium">{t(locale, "longitude")}</th>
                 <th className="py-1.5 text-end font-medium">{t(locale, "house")}</th>
+                <th className="hidden py-1.5 ps-2 text-end font-medium md:table-cell">{t(locale, "speed")}</th>
                 <th className="hidden py-1.5 ps-2 text-end font-medium sm:table-cell">{t(locale, "dignity")}</th>
               </tr>
             </thead>
@@ -208,6 +216,9 @@ export function ChartResults({
                     <td className="py-1.5 text-end text-xs tabular-nums text-subtle">
                       {p.house ?? "—"}
                     </td>
+                    <td className="hidden py-1.5 ps-2 text-end font-mono text-[11px] text-subtle md:table-cell">
+                      {formatSpeed(p.speed)}
+                    </td>
                     <td className="hidden py-1.5 ps-2 text-end text-xs text-subtle sm:table-cell">
                       {t(locale, dig)}
                     </td>
@@ -239,6 +250,9 @@ export function ChartResults({
                       />
                     </td>
                     <td className="py-1.5 text-end text-xs tabular-nums text-subtle">{p.house ?? "—"}</td>
+                    <td className="hidden py-1.5 ps-2 text-end font-mono text-[11px] text-subtle md:table-cell">
+                      {formatSpeed(p.speed)}
+                    </td>
                     <td className="hidden py-1.5 sm:table-cell" />
                   </tr>
                 );
@@ -265,6 +279,8 @@ export function ChartResults({
         <TabsList>
           <TabsTrigger value="aspects">{t(locale, "aspects")}</TabsTrigger>
           <TabsTrigger value="houses">{t(locale, "houses")}</TabsTrigger>
+          <TabsTrigger value="numbers">{t(locale, "numbers")}</TabsTrigger>
+          <TabsTrigger value="data">{t(locale, "dataExport")}</TabsTrigger>
           <TabsTrigger value="method">{t(locale, "notes")}</TabsTrigger>
         </TabsList>
         <TabsContent value="houses" className="mt-4">
@@ -313,11 +329,28 @@ export function ChartResults({
                   </span>
                   <span className="font-mono text-xs text-muted tabular-nums">
                     {Math.floor(orb)}°{String(Math.floor((orb % 1) * 60)).padStart(2, "0")}′
+                    {a.applying === true ? ` · ${t(locale, "applying")}` : a.applying === false ? ` · ${t(locale, "separating")}` : ""}
                   </span>
                 </li>
               );
             })}
           </ul>
+        </TabsContent>
+        <TabsContent value="numbers" className="mt-4">
+          <NumerologyReportView report={numbers} locale={locale} compact />
+        </TabsContent>
+        <TabsContent value="data" className="mt-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-muted">
+                {tx(locale, "Copyable dump of this chart’s calculated positions, houses, aspects and numbers.")}
+              </p>
+              <CopyDataButton text={dump} locale={locale} />
+            </div>
+            <pre className="overflow-x-auto rounded-xl bg-surface-2 p-4 font-mono text-[11px] leading-5 text-muted">
+              {dump}
+            </pre>
+          </div>
         </TabsContent>
         <TabsContent value="method" className="mt-4">
           <ul className="flex flex-col gap-2 text-sm text-muted">
@@ -325,9 +358,18 @@ export function ChartResults({
               <li key={n}>{tx(locale, n)}</li>
             ))}
             <li>
+              {t(locale, "lst")}: {lst}
+            </li>
+            <li>
               {tx(
                 locale,
                 "Tropical zodiac. Orbs from swiss-ephemeris-api (conj/opp 10°, tri/sqr 8°, sex 6°).",
+              )}
+            </li>
+            <li>
+              {tx(
+                locale,
+                "Planet speed is ecliptic longitude per day. Negative speed is retrograde.",
               )}
             </li>
           </ul>

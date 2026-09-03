@@ -6,7 +6,7 @@ import { t, tx } from "@/lib/astro/i18n";
 export const Route = createFileRoute("/about")({ component: About });
 
 const PARAS = [
-  "Sepehr is the computational front of the same astrology platform as the Telegram bot: Swiss Ephemeris, tropical zodiac, Placidus houses, API orbs, LMT before 1900, and the synastry / composite / solar-return / secondary-progression algorithms.",
+  "Sepehr is the computational front of the same astrology platform as the Telegram bot: Swiss Ephemeris, tropical zodiac, Placidus houses, API orbs, LMT before 1900, and the synastry / composite / solar-return / secondary-progression algorithms. Pythagorean numerology (life path, birth number, personal year, Hungarian digit grid) is a separate digit method from the civil date — not astronomy.",
   "The Einstein demo uses the repository fixture: Ulm, 14 March 1879, 11:30, Europe/Berlin, Placidus. For other pre-1900 births the default is birthplace LMT — matching the bot.",
   "The traditional reading is a keyword list, not a prediction. The optional deep reading is generated from these computed positions only.",
 ];
@@ -19,6 +19,7 @@ const BULLETS = [
   "Solar return first-order correction — bot/astro.py MEAN_SOLAR_SPEED",
   "Secondary progression: 1 day = 1 year, TROPICAL_YEAR_DAYS = 365.24219",
   "Dignities: Ptolemy, Tetrabiblos I.17–19",
+  "Pythagorean numerology: full digit sum of D.M.YYYY; personal year is birthday-to-birthday",
   "Geocoding: Nominatim (OSM) + curated gazetteer + tz-lookup",
 ];
 

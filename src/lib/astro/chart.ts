@@ -402,3 +402,15 @@ export const SHIRAZ_1970: BirthInput = {
   houseSystem: "P",
 };
 
+/** Natal + numerology fixture matching the user's Astro-Seek PDFs. */
+export const BEHNOUSH: BirthInput = {
+  name: "Behnoush Kazemi",
+  date: "1995-12-05",
+  time: "23:30",
+  latitude: 32.4667,
+  longitude: 48.35,
+  timezone: "Asia/Tehran",
+  locationName: "Andimeshk, Iran",
+  houseSystem: "P",
+};
+

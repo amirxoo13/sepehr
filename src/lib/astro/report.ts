@@ -22,7 +22,6 @@ import {
   NODE_SIGN,
   PATTERN_NOTE,
   PLANET_CORE,
-  PLANET_IN_HOUSE,
   PLANET_IN_SIGN,
   POLARITY,
   RETROGRADE_NOTE,
@@ -32,6 +31,21 @@ import {
   aspectKey,
   pick,
 } from "./cookbook";
+import {
+  EMPTY_HOUSE,
+  HOUSE_KIND,
+  HOUSE_LORD_INTRO,
+  HOUSE_SECTION_INTRO,
+  HOUSE_SHORT_EN,
+  HOUSE_SHORT_FA,
+  OCCUPIED_LEAD,
+  PLANET_FA_NAME,
+  SIGN_FA_NAME,
+  SIGN_PLAIN,
+  houseKindKey,
+  locDignity,
+  planetInHousePlain,
+} from "./house-copy";
 import { PLANET_NAME, type Locale } from "./i18n";
 import { angularDistance, isMainPlanet, planetId, trueAspectOrb } from "./math";
 import { dignityOf, type Dignity } from "./meanings";
@@ -65,20 +79,28 @@ export interface ChartReport {
   aspects: ReportBlock[];
   houses: ReportBlock[];
   houseLordIntro: string;
+  houseIntro: string[];
   houseLords: HouseLord[];
   pattern: ReportBlock[];
   extra: ReportBlock[];
   analysis: ChartAnalysis;
 }
 
-function locSign(sign: string, _locale?: Locale): string {
+function locSign(sign: string, locale?: Locale): string {
+  if (locale === "fa") return SIGN_FA_NAME[sign] ?? sign;
   return sign;
 }
-function locPlanet(id: string, _locale?: Locale): string {
-  return PLANET_NAME[id] ?? id[0] + id.slice(1).toLowerCase();
+function locPlanet(id: string, locale?: Locale): string {
+  const key = id.toUpperCase();
+  if (locale === "fa") return PLANET_FA_NAME[key] ?? PLANET_NAME[key] ?? id;
+  return PLANET_NAME[key] ?? id[0] + id.slice(1).toLowerCase();
 }
 function locAspect(name: string, _locale?: Locale): string {
   return name.toLowerCase();
+}
+
+function say(locale: Locale, en: string, fa: string): string {
+  return locale === "fa" ? fa : en;
 }
 
 function fmtDms(p: PlanetPosition): string {
@@ -99,8 +121,8 @@ function fmtLon(degInSign: number): string {
   return `${d}°${m}′`;
 }
 
-function dignityWord(dig: Dignity, _locale?: Locale): string {
-  return dig;
+function dignityWord(dig: Dignity, locale?: Locale): string {
+  return locDignity(dig, locale ?? "en");
 }
 
 function aspectLinesFor(id: string, chart: ChartResult, locale: Locale, synastry: boolean): AspectLine[] {
@@ -155,7 +177,7 @@ function planetBlock(
   const house = p.house;
   const core = pick(PLANET_CORE[id], locale);
   const signText = pick(PLANET_IN_SIGN[id]?.[sign], locale);
-  const houseText = house ? pick(PLANET_IN_HOUSE[id]?.[house], locale) : "";
+  const houseText = house ? planetInHousePlain(id, house, locale) : "";
   const digText = pick(DIGNITY_NOTE[dig], locale);
   const rx = p.retrograde ? pick(RETROGRADE_NOTE, locale) : "";
   const combust = solarCondition(p, analysis.sun, locale);
@@ -164,40 +186,49 @@ function planetBlock(
   const isAngular = house === 1 || house === 4 || house === 7 || house === 10;
   const score = analysis.scores.find((s) => s.planet === id);
 
-  const title =
-    locale === "fa"
-      ? `${name} در ${signName}${house ? `، خانهٔ ${house}` : ""}`
-      : `${name} in ${sign}${house ? ` · house ${house}` : ""}`;
+  const title = say(
+    locale,
+    `${name} in ${sign}${house ? ` · house ${house}` : ""}`,
+    `${name} در ${signName}${house ? `، خانهٔ ${house}` : ""}`,
+  );
 
   const meta = `${fmtDms(p)} · ${dignityWord(dig, locale)}${p.retrograde ? (locale === "fa" ? " · راجع" : " · Rx") : ""}`;
 
   const extra: string[] = [];
   if (isRuler) {
     extra.push(
-      locale === "fa"
-        ? "این سیاره حاکم طالع است — کلید ورود به جهان. جای آن را در تمام خوانش وزن کنید."
-        : "This planet is the chart ruler — the key of entry into the world. Weigh its placement through the whole reading.",
+      say(
+        locale,
+        "This planet is the chart ruler — the key of entry into the world. Weigh its placement through the whole reading.",
+        "این سیاره حاکم طالع است؛ یعنی کلید ورود به جهان. جایش را در تمام خوانش وزن کنید.",
+      ),
     );
   }
   if (isAngular) {
     extra.push(
-      locale === "fa"
-        ? `سیاره در خانهٔ زاویه‌ای ${house} است و زودتر از بقیه در زندگی ظاهر می‌شود.`
-        : `The planet sits in angular house ${house} and appears early in the life.`,
+      say(
+        locale,
+        `The planet sits in angular house ${house} and appears early in the life.`,
+        `این سیاره در خانهٔ زاویه‌ای ${house} است و زودتر از بقیه در زندگی دیده می‌شود.`,
+      ),
     );
   }
   if (ruled.length) {
     extra.push(
-      locale === "fa"
-        ? `به‌عنوان خداوندگار کاسپ، این سیاره حاکم خانه‌های ${ruled.join("، ")} است؛ موضوع آن خانه‌ها از اینجا اداره می‌شود.`
-        : `As cusp lord it rules houses ${ruled.join(", ")}; those topics are administered from this placement.`,
+      say(
+        locale,
+        `As cusp lord it rules houses ${ruled.join(", ")}; those topics are administered from this placement.`,
+        `این سیاره حاکم خانه‌های ${ruled.join("، ")} است؛ موضوع آن خانه‌ها از همین‌جا اداره می‌شود.`,
+      ),
     );
   }
   if (score && analysis.scores[0]?.planet === id) {
     extra.push(
-      locale === "fa"
-        ? "در وزن‌دهی این نقشه (حاکم طالع، شأن، زاویه، جنبه‌ها) این سیاره غالب است."
-        : "On this map’s weighting (chart ruler, dignity, angles, aspects) this planet dominates.",
+      say(
+        locale,
+        "On this map’s weighting (chart ruler, dignity, angles, aspects) this planet dominates.",
+        "در وزن‌دهی این نقشه (حاکم طالع، شأن، زاویه، جنبه‌ها) این سیاره غالب است.",
+      ),
     );
   }
 
@@ -224,19 +255,21 @@ function aspectBlock(a: AspectData, locale: Locale, synastry: boolean): ReportBl
   const n2 = locPlanet(p2, locale);
   const an = locAspect(aspect, locale);
   const title = synastry
-    ? locale === "fa"
-      ? `${n1} (نفر اول) ${an} ${n2} (نفر دوم)`
-      : `${n1} (person 1) ${an} ${n2} (person 2)`
+    ? say(locale, `${n1} (person 1) ${an} ${n2} (person 2)`, `${n1} (نفر اول) ${an} ${n2} (نفر دوم)`)
     : `${n1} ${an} ${n2}`;
   const tightness =
     orb < 1
-      ? locale === "fa"
-        ? "جنبه‌ای بسیار نزدیک (زیر یک درجه) — وزن آن در خوانش بالاست."
-        : "A very tight aspect (under one degree) — it carries high weight in the reading."
+      ? say(
+          locale,
+          "A very tight aspect (under one degree) — it carries high weight in the reading.",
+          "جنبه‌ای بسیار نزدیک (زیر یک درجه) — وزن آن در خوانش بالاست.",
+        )
       : orb < 3
-        ? locale === "fa"
-          ? "ارب تنگ؛ گفتگوی دو سیاره در عملِ روزانه شنیده می‌شود."
-          : "A tight orb; the two planets’ conversation is audible in daily life."
+        ? say(
+            locale,
+            "A tight orb; the two planets’ conversation is audible in daily life.",
+            "ارب تنگ است؛ گفتگوی دو سیاره در زندگی روزمره شنیده می‌شود.",
+          )
         : "";
   const body = [specific || nature, tightness].filter(Boolean);
   return {
@@ -254,52 +287,48 @@ function portrait(chart: ChartResult, a: ChartAnalysis, locale: Locale): string[
   const moon = a.moon;
   const name = chart.subject.name;
   if (sun && moon) {
-    if (locale === "fa") {
-      lines.push(
-        `${name}: خورشید در ${locSign(String(sun.sign), locale)} ${fmtDms(sun)} (خانهٔ ${sun.house ?? "؟"})، ماه در ${locSign(String(moon.sign), locale)} ${fmtDms(moon)} (خانهٔ ${moon.house ?? "؟"})، طالع ${locSign(a.ascSign, locale)}. این سه نقطه — هویت، نیاز، نمود — اسکلت خوانش‌اند.`,
-      );
-    } else {
-      lines.push(
+    lines.push(
+      say(
+        locale,
         `${name}: Sun in ${sun.sign} ${fmtDms(sun)} (house ${sun.house ?? "?"}), Moon in ${moon.sign} ${fmtDms(moon)} (house ${moon.house ?? "?"}), ${a.ascSign} rising. These three — identity, need, manner — are the skeleton of the reading.`,
-      );
-    }
+        `${name}: خورشید در ${locSign(String(sun.sign), locale)} ${fmtDms(sun)} (خانهٔ ${sun.house ?? "؟"})، ماه در ${locSign(String(moon.sign), locale)} ${fmtDms(moon)} (خانهٔ ${moon.house ?? "؟"})، طالع ${locSign(a.ascSign, locale)}. این سه نقطه — هویت، نیاز، نمود — اسکلت خوانش‌اند.`,
+      ),
+    );
   }
   lines.push(pick(MODE_FRAME[chart.mode], locale));
   lines.push(pick(SECT[a.sect], locale));
   lines.push(pick(LUNAR_PHASE[a.lunarPhase.name], locale));
   if (a.ruler) {
     const rName = locPlanet(a.chartRuler, locale);
-    if (locale === "fa") {
-      lines.push(
-        `حاکم طالع ${rName} است و در ${locSign(String(a.ruler.sign), locale)}، خانهٔ ${a.ruler.house ?? "؟"} (${fmtDms(a.ruler)}) جای دارد. ورود به جهان از این میدان عمل می‌کند.`,
-      );
-    } else {
-      lines.push(
+    lines.push(
+      say(
+        locale,
         `The chart ruler is ${rName}, placed in ${a.ruler.sign}, house ${a.ruler.house ?? "?"} (${fmtDms(a.ruler)}). Entry into the world acts from that field.`,
-      );
-    }
+        `حاکم طالع ${rName} است و در ${locSign(String(a.ruler.sign), locale)}، خانهٔ ${a.ruler.house ?? "؟"} (${fmtDms(a.ruler)}) جای دارد. ورود به جهان از این میدان عمل می‌کند.`,
+      ),
+    );
   }
   const top = a.scores.slice(0, 3);
   if (top.length) {
-    const names = top
-      .map((s) =>
-        locale === "fa"
-          ? `${locPlanet(s.planet, locale)} (${s.score.toFixed(1)})`
-          : `${locPlanet(s.planet, locale)} (${s.score.toFixed(1)})`,
-      )
-      .join(locale === "fa" ? "، " : ", ");
+    const names = top.map((s) => `${locPlanet(s.planet, locale)} (${s.score.toFixed(1)})`).join(locale === "fa" ? "، " : ", ");
     lines.push(
-      locale === "fa"
-        ? `سیارات غالب این نقشه (وزن شأن، زاویه، حاکم، جنبه): ${names}.`
-        : `Dominant planets on this map (dignity, angles, ruler, aspects): ${names}.`,
+      say(
+        locale,
+        `Dominant planets on this map (dignity, angles, ruler, aspects): ${names}.`,
+        `سیارات غالب این نقشه (وزن شأن، زاویه، حاکم، جنبه): ${names}.`,
+      ),
     );
   }
   lines.push(pick(ELEMENT_PREPONDERANCE[a.dominantElement], locale));
   if (a.counts.elements[a.weakElement] === 0) {
+    const weakFa =
+      a.weakElement === "FIRE" ? "آتش" : a.weakElement === "EARTH" ? "خاک" : a.weakElement === "AIR" ? "هوا" : "آب";
     lines.push(
-      locale === "fa"
-        ? `هیچ سیارهٔ کلاسیکی در عنصر ${a.weakElement === "FIRE" ? "آتش" : a.weakElement === "EARTH" ? "خاک" : a.weakElement === "AIR" ? "هوا" : "آب"} نیست — این کمبود در رفتار جبران می‌شود (جستجوی آن کیفیت در دیگری یا در کار).`
-        : `No classical planet occupies ${a.weakElement.toLowerCase()} — the lack is compensated in behaviour (seeking that quality in others or in work).`,
+      say(
+        locale,
+        `No classical planet occupies ${a.weakElement.toLowerCase()} — the lack is compensated in behaviour (seeking that quality in others or in work).`,
+        `هیچ سیارهٔ کلاسیکی در عنصر ${weakFa} نیست — این کمبود در رفتار جبران می‌شود (جستجوی آن کیفیت در دیگری یا در کار).`,
+      ),
     );
   }
   lines.push(pick(MODALITY_PREPONDERANCE[a.dominantModality], locale));
@@ -315,15 +344,11 @@ function portrait(chart: ChartResult, a: ChartAnalysis, locale: Locale): string[
       const names = s.planets.map((p) => locPlanet(p, locale)).join(locale === "fa" ? "، " : ", ");
       if (s.kind === "sign") {
         lines.push(
-          locale === "fa"
-            ? `ستلیوم برجی در ${locSign(s.key, locale)}: ${names}.`
-            : `Sign stellium in ${s.key}: ${names}.`,
+          say(locale, `Sign stellium in ${s.key}: ${names}.`, `ستلیوم برجی در ${locSign(s.key, locale)}: ${names}.`),
         );
       } else {
         lines.push(
-          locale === "fa"
-            ? `ستلیوم خانه‌ای در خانهٔ ${s.house}: ${names}.`
-            : `House stellium in house ${s.house}: ${names}.`,
+          say(locale, `House stellium in house ${s.house}: ${names}.`, `ستلیوم خانه‌ای در خانهٔ ${s.house}: ${names}.`),
         );
       }
     }
@@ -333,38 +358,142 @@ function portrait(chart: ChartResult, a: ChartAnalysis, locale: Locale): string[
       const names = pat.planets.map((p) => locPlanet(p, locale)).join(locale === "fa" ? "، " : ", ");
       if (pat.kind === "t-square") {
         lines.push(
-          locale === "fa"
-            ? `T-مربع میان ${names}${pat.apex ? ` — رأس ${locPlanet(pat.apex, locale)}` : ""}. تنش در رأس تخلیه می‌شود.`
-            : `T-square among ${names}${pat.apex ? ` — apex ${locPlanet(pat.apex, locale)}` : ""}. Tension discharges at the apex.`,
+          say(
+            locale,
+            `T-square among ${names}${pat.apex ? ` — apex ${locPlanet(pat.apex, locale)}` : ""}. Tension discharges at the apex.`,
+            `T-مربع میان ${names}${pat.apex ? ` — رأس ${locPlanet(pat.apex, locale)}` : ""}. تنش در رأس تخلیه می‌شود.`,
+          ),
         );
       } else {
-        lines.push(
-          locale === "fa" ? `تثلیث بزرگ میان ${names}.` : `Grand trine among ${names}.`,
-        );
+        lines.push(say(locale, `Grand trine among ${names}.`, `تثلیث بزرگ میان ${names}.`));
       }
     }
   }
   if (a.angular.length) {
     lines.push(
-      locale === "fa"
-        ? `سیارات زاویه‌ای (خانه‌های ۱، ۴، ۷، ۱۰) دیده می‌شوند و زودتر از بقیه در زندگی ظاهر می‌شوند: ${a.angular.map((p) => locPlanet(p, locale)).join("، ")}.`
-        : `Angular planets (houses 1, 4, 7, 10) are visible and appear early in life: ${a.angular.map((p) => locPlanet(p, locale)).join(", ")}.`,
+      say(
+        locale,
+        `Angular planets (houses 1, 4, 7, 10) are visible and appear early in life: ${a.angular.map((p) => locPlanet(p, locale)).join(", ")}.`,
+        `سیارات زاویه‌ای (خانه‌های ۱، ۴، ۷، ۱۰) دیده می‌شوند و زودتر از بقیه در زندگی ظاهر می‌شوند: ${a.angular.map((p) => locPlanet(p, locale)).join("، ")}.`,
+      ),
     );
   }
   if (a.tightest[0]) {
     const t = a.tightest[0];
     const orb = trueAspectOrb(t);
     lines.push(
-      locale === "fa"
-        ? `نزدیک‌ترین جنبه: ${locPlanet(t.planet1, locale)} ${locAspect(String(t.aspect_name), locale)} ${locPlanet(t.planet2, locale)} با ارب ${orb.toFixed(2)}°. این گفتگو را در تمام بخش‌های زیر بشنوید.`
-        : `Tightest aspect: ${locPlanet(t.planet1, locale)} ${locAspect(String(t.aspect_name), locale)} ${locPlanet(t.planet2, locale)} at ${orb.toFixed(2)}°. Hear this conversation through every section below.`,
+      say(
+        locale,
+        `Tightest aspect: ${locPlanet(t.planet1, locale)} ${locAspect(String(t.aspect_name), locale)} ${locPlanet(t.planet2, locale)} at ${orb.toFixed(2)}°. Hear this conversation through every section below.`,
+        `نزدیک‌ترین جنبه: ${locPlanet(t.planet1, locale)} ${locAspect(String(t.aspect_name), locale)} ${locPlanet(t.planet2, locale)} با ارب ${orb.toFixed(2)}°. این گفتگو را در تمام بخش‌های زیر بشنوید.`,
+      ),
     );
   }
   return lines.filter(Boolean);
 }
 
-export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
-  const locale: Locale = "en";
+function shortTopic(house: number, locale: Locale): string {
+  return locale === "fa" ? (HOUSE_SHORT_FA[house] ?? "") : (HOUSE_SHORT_EN[house] ?? "");
+}
+
+function houseBlock(
+  h: ChartResult["houses"][number],
+  chart: ChartResult,
+  a: ChartAnalysis,
+  locale: Locale,
+): ReportBlock {
+  const occupants = chart.positions.filter(isMainPlanet).filter((p) => p.house === h.house);
+  const names = occupants.map((p) => locPlanet(planetId(p), locale)).join(locale === "fa" ? "، " : ", ");
+  const angle = h.house === 1 ? "ASC" : h.house === 4 ? "IC" : h.house === 7 ? "DSC" : h.house === 10 ? "MC" : "";
+  const lord = a.houseLords.find((x) => x.house === h.house);
+  const kind = houseKindKey(h.house);
+  const sign = String(h.sign);
+  const dms = fmtLon(h.degree_in_sign);
+  const topic = shortTopic(h.house, locale);
+  const signName = locSign(sign, locale);
+
+  const cuspLine = say(
+    locale,
+    `In this chart, house ${h.house} starts at ${dms} of ${sign}. This number is calculated from the birth date, time and place. It is not a guess.`,
+    `در این نقشه خانهٔ ${h.house} از ${dms} برج ${signName} شروع می‌شود. این عدد از تاریخ، ساعت و محل تولد حساب شده است. حدس نیست.`,
+  );
+  const styleLine = say(
+    locale,
+    `The topics of house ${h.house} (${topic}) show up in the style of ${sign}.`,
+    `موضوع خانهٔ ${h.house} (${topic}) با سبک برج ${signName} دیده می‌شود.`,
+  );
+
+  const lordPos = lord ? chart.positions.find((p) => planetId(p) === lord.ruler && isMainPlanet(p)) : undefined;
+  let lordLine = "";
+  if (lord) {
+    const rName = locPlanet(lord.ruler, locale);
+    const rSign = locSign(lord.rulerSign, locale);
+    const dig = dignityWord(lord.dignity, locale);
+    const lordHouse = lord.rulerHouse;
+    const lordTopic = lordHouse ? shortTopic(lordHouse, locale) : "";
+    const lordDms = lordPos ? fmtDms(lordPos) : "";
+    if (locale === "fa") {
+      lordLine = `برج ${signName} را سیارهٔ ${rName} اداره می‌کند. پس مدیر خانهٔ ${h.house} سیارهٔ ${rName} است.`;
+      if (lordHouse) {
+        lordLine += ` در این نقشه ${rName} در ${lordDms} برج ${rSign} در خانهٔ ${lordHouse} نشسته است. شأن سنتی: ${dig}. پس موضوع خانهٔ ${h.house} (${topic}) از راه خانهٔ ${lordHouse} (${lordTopic}) اداره می‌شود.`;
+      }
+      if (lordHouse === h.house) {
+        lordLine += " مدیر این خانه هم داخل همین خانه نشسته است؛ پس موضوع اینجا متمرکز است.";
+      }
+    } else {
+      lordLine = `${sign} is ruled by ${rName}. So the manager of house ${h.house} is ${rName}.`;
+      if (lordHouse) {
+        lordLine += ` In this chart ${rName} sits at ${lordDms} of ${lord.rulerSign} in house ${lordHouse}. Traditional dignity: ${dig}. So the topics of house ${h.house} (${topic}) are handled through house ${lordHouse} (${lordTopic}).`;
+      }
+      if (lordHouse === h.house) {
+        lordLine += " The manager of this house also sits in this house, so the topic is concentrated here.";
+      }
+    }
+  }
+
+  const occIntro = occupants.length ? OCCUPIED_LEAD : EMPTY_HOUSE;
+  const occParas = occupants.map((p) => {
+    const id = planetId(p);
+    const fact = say(
+      locale,
+      `${locPlanet(id, locale)} sits in this house at ${fmtDms(p)} of ${p.sign}. That is the calculated longitude.`,
+      `${locPlanet(id, locale)} در این خانه روی ${fmtDms(p)} برج ${locSign(String(p.sign), locale)} نشسته است. این طول دایرةالبروج حساب‌شده است.`,
+    );
+    return `${fact} ${planetInHousePlain(id, h.house, locale)}`;
+  });
+
+  const emptyAngle = angle
+    ? say(
+        locale,
+        `House ${h.house} is also an angle of the chart (${angle}). Even when empty of planets, the angle itself is a calculated point and stays important.`,
+        `خانهٔ ${h.house} یکی از زاویه‌های نقشه هم هست (${angle}). حتی اگر سیاره‌ای داخلش نباشد، خود زاویه یک نقطه حساب‌شده است و مهم می‌ماند.`,
+      )
+    : "";
+
+  return {
+    id: `H${h.house}`,
+    kicker: locale === "fa" ? "خانه" : "House",
+    title: say(
+      locale,
+      `House ${h.house}${angle ? ` · ${angle}` : ""} — ${sign}`,
+      `خانهٔ ${h.house}${angle ? ` · ${angle}` : ""} — ${signName}`,
+    ),
+    meta: `${dms}${occupants.length ? ` · ${names}` : locale === "fa" ? " · خالی از سیارهٔ کلاسیک" : " · no classical planet"}`,
+    body: [
+      HOUSE_THEME[h.house] ?? "",
+      HOUSE_KIND[kind],
+      cuspLine,
+      styleLine,
+      SIGN_PLAIN[sign] ?? "",
+      lordLine,
+      occIntro,
+      emptyAngle,
+      ...occParas,
+    ].filter(Boolean),
+  };
+}
+
+export function buildReport(chart: ChartResult, locale: Locale = "en"): ChartReport {
   const a = analyzeChart(chart);
   const synastry = chart.mode === "synastry" || chart.mode === "transit";
 
@@ -375,17 +504,21 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
   bigThree.push({
     id: "ASC",
     kicker: locale === "fa" ? "زاویه" : "Angle",
-    title: locale === "fa" ? `طالع ${locSign(a.ascSign, locale)}` : `${a.ascSign} rising`,
-    meta: `${fmtLon(ascDeg)} · ${locale === "fa" ? `دهک ${a.decan.face}، وجه ${locPlanet(a.decan.ruler, locale)}` : `decan ${a.decan.face}, face ${locPlanet(a.decan.ruler, locale)}`}`,
+    title: say(locale, `${a.ascSign} rising`, `طالع ${locSign(a.ascSign, locale)}`),
+    meta: `${fmtLon(ascDeg)} · ${say(locale, `decan ${a.decan.face}, face ${locPlanet(a.decan.ruler, locale)}`, `دهک ${a.decan.face}، وجه ${locPlanet(a.decan.ruler, locale)}`)}`,
     body: [
       pick(RISING[a.ascSign], locale),
-      locale === "fa"
-        ? `دهک ${a.decan.face} از ${locSign(a.ascSign, locale)} (وجوه کلدانی، بطلمیوس I.18) تحت وجه ${locPlanet(a.decan.ruler, locale)} است.`
-        : `Decan ${a.decan.face} of ${a.ascSign} (Chaldean faces, Tetrabiblos I.18) is faced by ${a.decan.ruler}.`,
+      say(
+        locale,
+        `Decan ${a.decan.face} of ${a.ascSign} (Chaldean faces, Tetrabiblos I.18) is faced by ${a.decan.ruler}.`,
+        `دهک ${a.decan.face} از ${locSign(a.ascSign, locale)} (وجوه کلدانی، بطلمیوس I.18) تحت وجه ${locPlanet(a.decan.ruler, locale)} است.`,
+      ),
       a.ruler
-        ? locale === "fa"
-          ? `حاکم این طالع ${locPlanet(a.chartRuler, locale)} است در ${locSign(String(a.ruler.sign), locale)}، خانهٔ ${a.ruler.house ?? "؟"}.`
-          : `This rising’s lord is ${locPlanet(a.chartRuler, locale)} in ${a.ruler.sign}, house ${a.ruler.house ?? "?"}.`
+        ? say(
+            locale,
+            `This rising’s lord is ${locPlanet(a.chartRuler, locale)} in ${a.ruler.sign}, house ${a.ruler.house ?? "?"}.`,
+            `حاکم این طالع ${locPlanet(a.chartRuler, locale)} است در ${locSign(String(a.ruler.sign), locale)}، خانهٔ ${a.ruler.house ?? "؟"}.`,
+          )
         : "",
     ].filter(Boolean),
   });
@@ -394,14 +527,16 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
   bigThree.push({
     id: "MC",
     kicker: locale === "fa" ? "زاویه" : "Angle",
-    title: locale === "fa" ? `وسط‌السماء ${locSign(a.mcSign, locale)}` : `MC in ${a.mcSign}`,
+    title: say(locale, `MC in ${a.mcSign}`, `وسط‌السماء ${locSign(a.mcSign, locale)}`),
     meta: fmtLon(mcDeg),
     body: [
       pick(MC_SIGN[a.mcSign], locale),
       mcLord
-        ? locale === "fa"
-          ? `حاکم خانهٔ دهم ${locPlanet(mcLord.ruler, locale)} است در ${locSign(mcLord.rulerSign, locale)}${mcLord.rulerHouse ? `، خانهٔ ${mcLord.rulerHouse}` : ""} (${dignityWord(mcLord.dignity, locale)}). مسیر عمومی از این سیاره خوانده می‌شود.`
-          : `The 10th-house lord is ${locPlanet(mcLord.ruler, locale)} in ${mcLord.rulerSign}${mcLord.rulerHouse ? `, house ${mcLord.rulerHouse}` : ""} (${dignityWord(mcLord.dignity, locale)}). The public path is read from this planet.`
+        ? say(
+            locale,
+            `The 10th-house lord is ${locPlanet(mcLord.ruler, locale)} in ${mcLord.rulerSign}${mcLord.rulerHouse ? `, house ${mcLord.rulerHouse}` : ""} (${dignityWord(mcLord.dignity, locale)}). The public path is read from this planet.`,
+            `حاکم خانهٔ دهم ${locPlanet(mcLord.ruler, locale)} است در ${locSign(mcLord.rulerSign, locale)}${mcLord.rulerHouse ? `، خانهٔ ${mcLord.rulerHouse}` : ""} (${dignityWord(mcLord.dignity, locale)}). مسیر عمومی از این سیاره خوانده می‌شود.`,
+          )
         : "",
     ].filter(Boolean),
   });
@@ -409,10 +544,11 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
   const ruler: ReportBlock = {
     id: "ruler",
     kicker: locale === "fa" ? "کلید نقشه" : "Chart key",
-    title:
-      locale === "fa"
-        ? `حاکم طالع: ${locPlanet(a.chartRuler, locale)}`
-        : `Chart ruler: ${locPlanet(a.chartRuler, locale)}`,
+    title: say(
+      locale,
+      `Chart ruler: ${locPlanet(a.chartRuler, locale)}`,
+      `حاکم طالع: ${locPlanet(a.chartRuler, locale)}`,
+    ),
     meta: a.ruler
       ? `${fmtDms(a.ruler)} ${locSign(String(a.ruler.sign), locale)}${a.ruler.house ? ` · H${a.ruler.house}` : ""}`
       : undefined,
@@ -430,43 +566,7 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
 
   const aspects = a.tightest.map((x) => aspectBlock(x, locale, synastry));
 
-  const houses: ReportBlock[] = chart.houses.map((h) => {
-    const occupants = chart.positions.filter(isMainPlanet).filter((p) => p.house === h.house);
-    const names = occupants.map((p) => locPlanet(planetId(p), locale)).join(locale === "fa" ? "، " : ", ");
-    const angle = h.house === 1 ? "ASC" : h.house === 4 ? "IC" : h.house === 7 ? "DSC" : h.house === 10 ? "MC" : "";
-    const lord = a.houseLords.find((x) => x.house === h.house);
-    const occLines = occupants.map((p) => {
-      const id = planetId(p);
-      return locale === "fa"
-        ? `${locPlanet(id, locale)} ${fmtDms(p)} ${locSign(String(p.sign), locale)}`
-        : `${locPlanet(id, locale)} ${fmtDms(p)} ${p.sign}`;
-    });
-    const lordLine = lord
-      ? locale === "fa"
-        ? `حاکم کاسپ: ${locPlanet(lord.ruler, locale)} در ${locSign(lord.rulerSign, locale)}${lord.rulerHouse ? `، خانهٔ ${lord.rulerHouse}` : ""} — شأن ${dignityWord(lord.dignity, locale)}.`
-        : `Cusp lord: ${locPlanet(lord.ruler, locale)} in ${lord.rulerSign}${lord.rulerHouse ? `, house ${lord.rulerHouse}` : ""} — ${dignityWord(lord.dignity, locale)}.`
-      : "";
-    return {
-      id: `H${h.house}`,
-      kicker: locale === "fa" ? "خانه" : "House",
-      title:
-        locale === "fa"
-          ? `خانهٔ ${h.house}${angle ? ` · ${angle}` : ""} — ${locSign(String(h.sign), locale)}`
-          : `House ${h.house}${angle ? ` · ${angle}` : ""} — ${h.sign}`,
-      meta: `${Math.floor(h.degree_in_sign)}°${String(Math.floor((h.degree_in_sign % 1) * 60)).padStart(2, "0")}′${occupants.length ? ` · ${names}` : locale === "fa" ? " · خالی از سیارهٔ کلاسیک" : " · no classical planet"}`,
-      body: [
-        pick(HOUSE_THEME[h.house], locale),
-        lordLine,
-        occupants.length
-          ? locale === "fa"
-            ? `ساکنان: ${occLines.join("؛ ")}. میدان این خانه در زندگی پررنگ است.`
-            : `Occupants: ${occLines.join("; ")}. This field is loud in the life.`
-          : locale === "fa"
-            ? "خالی از سیارهٔ کلاسیک به معنای بی‌اهمیتی نیست؛ موضوع از راه حاکم برجِ کاسپ و عبورها فعال می‌شود."
-            : "An empty house is not unimportant; the topic is activated by the cusp’s lord and by transits.",
-      ].filter(Boolean),
-    };
-  });
+  const houses: ReportBlock[] = chart.houses.map((h) => houseBlock(h, chart, a, locale));
 
   const pattern: ReportBlock[] = [
     {
@@ -490,16 +590,16 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
       kicker: locale === "fa" ? "پیکربندی" : "Configuration",
       title:
         pat.kind === "t-square"
-          ? locale === "fa"
-            ? `T-مربع${pat.apex ? ` — رأس ${locPlanet(pat.apex, locale)}` : ""}`
-            : `T-square${pat.apex ? ` — apex ${locPlanet(pat.apex, locale)}` : ""}`
-          : locale === "fa"
-            ? "تثلیث بزرگ"
-            : "Grand trine",
+          ? say(
+              locale,
+              `T-square${pat.apex ? ` — apex ${locPlanet(pat.apex, locale)}` : ""}`,
+              `T-مربع${pat.apex ? ` — رأس ${locPlanet(pat.apex, locale)}` : ""}`,
+            )
+          : say(locale, "Grand trine", "تثلیث بزرگ"),
       meta: names,
       body: [
         pick(PATTERN_NOTE[pat.kind], locale),
-        locale === "fa" ? `سیارات درگیر: ${names}.` : `Planets involved: ${names}.`,
+        say(locale, `Planets involved: ${names}.`, `سیارات درگیر: ${names}.`),
       ].filter(Boolean),
     });
   }
@@ -510,12 +610,12 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
       kicker: locale === "fa" ? "الگو" : "Pattern",
       title: locale === "fa" ? "وزن سیارات" : "Planet weighting",
       body: [
-        locale === "fa"
-          ? "امتیاز از حاکم طالع، خورشید/ماه، شأن بطلمیوسی، زاویه‌ای بودن و تعداد جنبه‌ها ساخته می‌شود — نه از شهرت عام."
-          : "Scores are built from chart ruler, Sun/Moon, Ptolemaic dignity, angularity and aspect count — not from popular reputation.",
-        a.scores
-          .map((s) => `${locPlanet(s.planet, locale)} ${s.score.toFixed(1)}`)
-          .join(locale === "fa" ? " · " : " · "),
+        say(
+          locale,
+          "Scores are built from chart ruler, Sun/Moon, Ptolemaic dignity, angularity and aspect count — not from popular reputation.",
+          "امتیاز از حاکم طالع، خورشید/ماه، شأن بطلمیوسی، زاویه‌ای بودن و تعداد جنبه‌ها ساخته می‌شود — نه از شهرت عام.",
+        ),
+        a.scores.map((s) => `${locPlanet(s.planet, locale)} ${s.score.toFixed(1)}`).join(" · "),
       ],
     });
   }
@@ -527,9 +627,11 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
       title: locale === "fa" ? "رجوع" : "Retrogrades",
       body: [
         pick(RETROGRADE_NOTE, locale),
-        locale === "fa"
-          ? `راجع در این نقشه: ${a.retrogrades.map((p) => locPlanet(p, locale)).join("، ")}.`
-          : `Retrograde in this map: ${a.retrogrades.map((p) => locPlanet(p, locale)).join(", ")}.`,
+        say(
+          locale,
+          `Retrograde in this map: ${a.retrogrades.map((p) => locPlanet(p, locale)).join(", ")}.`,
+          `راجع در این نقشه: ${a.retrogrades.map((p) => locPlanet(p, locale)).join("، ")}.`,
+        ),
       ],
     });
   }
@@ -539,7 +641,11 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
     extra.push({
       id: "node",
       kicker: locale === "fa" ? "نقاط" : "Points",
-      title: locale === "fa" ? `رأس (گره شمالی) در ${locSign(String(a.node.sign), locale)}` : `North Node in ${a.node.sign}`,
+      title: say(
+        locale,
+        `North Node in ${a.node.sign}`,
+        `رأس (گره شمالی) در ${locSign(String(a.node.sign), locale)}`,
+      ),
       meta: `${fmtDms(a.node)}${a.node.house ? ` · H${a.node.house}` : ""}`,
       body: [pick(NODE_SIGN[String(a.node.sign)], locale)].filter(Boolean),
     });
@@ -548,13 +654,19 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
     extra.push({
       id: "lilith",
       kicker: locale === "fa" ? "نقاط" : "Points",
-      title: locale === "fa" ? `لیلیث (اوج میانگین ماه) در ${locSign(String(a.lilith.sign), locale)}` : `Lilith (mean apogee) in ${a.lilith.sign}`,
+      title: say(
+        locale,
+        `Lilith (mean apogee) in ${a.lilith.sign}`,
+        `لیلیث (اوج میانگین ماه) در ${locSign(String(a.lilith.sign), locale)}`,
+      ),
       meta: `${fmtDms(a.lilith)}${a.lilith.house ? ` · H${a.lilith.house}` : ""}`,
       body: [
-        locale === "fa"
-          ? "لیلیث نقطهٔ اوج میانگین مدار ماه است، نه سیاره. در سنت مدرن، جایی است که نیاز از هنجار خارج می‌شود و انکار یا شیفتگی می‌سازد."
-          : "Lilith is the Moon’s mean apogee, not a planet. In the modern tradition it marks where need leaves the norm and becomes fascination or denial.",
-        a.lilith.house ? pick(HOUSE_THEME[a.lilith.house], locale) : "",
+        say(
+          locale,
+          "Lilith is the Moon’s mean apogee, not a planet. In the modern tradition it marks where need leaves the norm and becomes fascination or denial.",
+          "لیلیث نقطهٔ اوج میانگین مدار ماه است، نه سیاره. در سنت مدرن جایی است که نیاز از هنجار خارج می‌شود و انکار یا شیفتگی می‌سازد.",
+        ),
+        a.lilith.house ? (HOUSE_THEME[a.lilith.house] ?? "") : "",
       ].filter(Boolean),
     });
   }
@@ -562,13 +674,15 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
     extra.push({
       id: "chiron",
       kicker: locale === "fa" ? "نقاط" : "Points",
-      title: locale === "fa" ? `کیرون در ${locSign(String(a.chiron.sign), locale)}` : `Chiron in ${a.chiron.sign}`,
+      title: say(locale, `Chiron in ${a.chiron.sign}`, `کیرون در ${locSign(String(a.chiron.sign), locale)}`),
       meta: `${fmtDms(a.chiron)}${a.chiron.house ? ` · H${a.chiron.house}` : ""}`,
       body: [
-        locale === "fa"
-          ? "کیرون سیارک «زخم شفادهنده» است. برج، سبک زخم را می‌گوید؛ خانه، میدان زندگی را."
-          : "Chiron is the asteroid of the healing wound. The sign is the wound’s style; the house is the field of life.",
-        a.chiron.house ? pick(HOUSE_THEME[a.chiron.house], locale) : "",
+        say(
+          locale,
+          "Chiron is the asteroid of the healing wound. The sign is the wound’s style; the house is the field of life.",
+          "کیرون سیارک «زخم شفادهنده» است. برج، سبک زخم را می‌گوید؛ خانه، میدان زندگی را.",
+        ),
+        a.chiron.house ? (HOUSE_THEME[a.chiron.house] ?? "") : "",
       ].filter(Boolean),
     });
   }
@@ -581,7 +695,8 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
     planets,
     aspects,
     houses,
-    houseLordIntro: pick(HOUSE_LORD_FRAME, locale),
+    houseLordIntro: HOUSE_LORD_FRAME,
+    houseIntro: [HOUSE_SECTION_INTRO, HOUSE_LORD_INTRO],
     houseLords: a.houseLords,
     pattern,
     extra,
@@ -590,7 +705,7 @@ export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
 }
 
 export function reportStrings(r: ChartReport): string[] {
-  const out: string[] = [r.frame, r.houseLordIntro, ...r.portrait];
+  const out: string[] = [r.frame, r.houseLordIntro, ...r.houseIntro, ...r.portrait];
   const eat = (b: ReportBlock) => {
     out.push(b.kicker, b.title, b.meta ?? "", ...b.body);
     for (const a of b.aspects ?? []) out.push(a.title, a.body);

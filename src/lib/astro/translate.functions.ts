@@ -22,6 +22,59 @@ function decodeHtml(s: string): string {
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
 }
 
+/** Fix leftover English / wrong Google words into traditional Persian astrology names. */
+const FA_GLOSS: Array<[RegExp, string]> = [
+  [/\bAries\b/g, "حمل"],
+  [/\bTaurus\b/g, "ثور"],
+  [/\bGemini\b/g, "جوزا"],
+  [/\bCancer\b/g, "سرطان"],
+  [/\bLeo\b/g, "اسد"],
+  [/\bVirgo\b/g, "سنبله"],
+  [/\bLibra\b/g, "میزان"],
+  [/\bScorpio\b/g, "عقرب"],
+  [/\bSagittarius\b/g, "قوس"],
+  [/\bCapricorn\b/g, "جدی"],
+  [/\bAquarius\b/g, "دلو"],
+  [/\bPisces\b/g, "حوت"],
+  [/\bSun\b/g, "خورشید"],
+  [/\bMoon\b/g, "ماه"],
+  [/\bMercury\b/g, "عطارد"],
+  [/\bVenus\b/g, "زهره"],
+  [/\bMars\b/g, "مریخ"],
+  [/\bJupiter\b/g, "مشتری"],
+  [/\bSaturn\b/g, "زحل"],
+  [/\bUranus\b/g, "اورانوس"],
+  [/\bNeptune\b/g, "نپتون"],
+  [/\bPluto\b/g, "پلوتو"],
+  [/\bAscendant\b/g, "طالع"],
+  [/\bMidheaven\b/g, "وسط‌السماء"],
+  [/\bconjunction\b/gi, "قرآن"],
+  [/\bopposition\b/gi, "مقابله"],
+  [/\btrine\b/gi, "تثلیث"],
+  [/\bsquare\b/gi, "تربیع"],
+  [/\bsextile\b/gi, "تسدیس"],
+  [/\bdomicile\b/gi, "منزل"],
+  [/\bexaltation\b/gi, "شرف"],
+  [/\bdetriment\b/gi, "وبال"],
+  [/\bperegrine\b/gi, "آواره"],
+  [/\bretrograde\b/gi, "راجع"],
+  [/\bباکره\b/g, "سنبله"],
+  [/\bترازو\b/g, "میزان"],
+  [/\bکماندار\b/g, "قوس"],
+  [/\bبزغاله\b/g, "جدی"],
+  [/\bونوس\b/g, "زهره"],
+  [/\bژوپیتر\b/g, "مشتری"],
+  [/\bساتورن\b/g, "زحل"],
+  [/\bمرکوری\b/g, "عطارد"],
+  [/\bجیوه\b/g, "عطارد"],
+];
+
+function applyFaGlossary(text: string): string {
+  let out = text;
+  for (const [re, to] of FA_GLOSS) out = out.replace(re, to);
+  return out;
+}
+
 async function read(url: string, headers: Record<string, string>, timeoutMs = 10000): Promise<string> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -81,18 +134,18 @@ async function myMemory(text: string, target: string): Promise<string> {
 }
 
 async function translateBlob(text: string, target: string): Promise<string> {
+  let out: string;
   try {
-    return await gtx(text, target);
+    out = await gtx(text, target);
   } catch {
-    /* gtx is frequently IP-blocked; Google's mobile page is the free path */
+    try {
+      out = await googleMobile(text, target);
+    } catch {
+      if (text.length <= 480) out = await myMemory(text, target);
+      else throw new Error("translate failed");
+    }
   }
-  try {
-    return await googleMobile(text, target);
-  } catch {
-    /* fall through */
-  }
-  if (text.length <= 480) return myMemory(text, target);
-  throw new Error("translate failed");
+  return target === "fa" ? applyFaGlossary(out) : out;
 }
 
 export const translateTexts = createServerFn({ method: "POST" })

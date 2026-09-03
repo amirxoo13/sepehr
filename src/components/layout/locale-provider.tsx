@@ -3,6 +3,7 @@ import { dirOf } from "@/lib/astro/languages";
 import { setTranslationTable, translationCatalog } from "@/lib/astro/i18n";
 import { loadI18nCache, loadLocale, saveI18nCache, saveLocale } from "@/lib/astro/storage";
 import { translateTexts } from "@/lib/astro/translate.functions";
+import { seededHouseFa } from "@/lib/astro/house-copy";
 import { Shell } from "./shell";
 
 type CtxValue = {
@@ -29,6 +30,24 @@ function applyDocument(locale: string) {
   document.documentElement.dir = dirOf(locale);
 }
 
+function tableFor(lang: string, cached: Record<string, string>): Record<string, string> {
+  if (lang === "fa") return { ...cached, ...seededHouseFa() };
+  return cached;
+}
+
+/** Do not send already-Persian (or Arabic/Hebrew) sentences back to Google. */
+function alreadyTargetScript(text: string, lang: string): boolean {
+  if (lang === "fa" || lang === "ar" || lang === "ur") {
+    const n = (text.match(/[\u0600-\u06FF]/g) ?? []).length;
+    return n >= 8;
+  }
+  if (lang === "he") {
+    const n = (text.match(/[\u0590-\u05FF]/g) ?? []).length;
+    return n >= 8;
+  }
+  return false;
+}
+
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState("en");
   const [tick, setTick] = useState(0);
@@ -40,7 +59,13 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const ensure = useCallback(async (texts: string[]) => {
     const lang = localeRef.current;
     if (lang === "en") return;
-    const missing = [...new Set(texts.filter((s) => s && s.trim() && tableRef.current[s] === undefined))];
+    const missing = [
+      ...new Set(
+        texts.filter(
+          (s) => s && s.trim() && tableRef.current[s] === undefined && !alreadyTargetScript(s, lang),
+        ),
+      ),
+    ];
     if (!missing.length) return;
     setTranslating(true);
     try {
@@ -77,8 +102,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     saveLocale(l);
     applyDocument(l);
     const cached = l === "en" ? {} : loadI18nCache(l);
-    tableRef.current = cached;
-    setTranslationTable(l, cached);
+    const table = tableFor(l, cached);
+    tableRef.current = table;
+    setTranslationTable(l, table);
     setTick((n) => n + 1);
     if (l !== "en") void ensure(translationCatalog());
   }
@@ -87,8 +113,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     const initial = loadLocale();
     localeRef.current = initial;
     const cached = initial === "en" ? {} : loadI18nCache(initial);
-    tableRef.current = cached;
-    setTranslationTable(initial, cached);
+    const table = tableFor(initial, cached);
+    tableRef.current = table;
+    setTranslationTable(initial, table);
     setLocaleState(initial);
     applyDocument(initial);
     if (initial !== "en") void ensure(translationCatalog());

@@ -328,20 +328,8 @@ export const PLANET_IN_HOUSE: Record<string, Record<number, Bi>> = {
   },
 };
 
-export const HOUSE_THEME: Record<number, Bi> = {
-  1: b("خانه ۱ — بدن و ظاهر: آغاز، نقاب ورود.", "House 1 — body and appearance: beginning, the mask of entry."),
-  2: b("خانه ۲ — معیشت و ارزش: کالاها، آنچه شما آن را مال خود می نامید.", "House 2 — livelihood and value: goods, what you call your own."),
-  3: b("خانهٔ ۳ — گفتار و خویشاوندان: خواهر و برادر، نامه، راه کوتاه.", "House 3 — speech and kin: siblings, letters, the short road."),
-  4: b("خانهٔ ۴ — ریشه و خانه: پدر و مادر، بنیاد، پایان امر.", "House 4 — roots and home: parent, foundation, the end of the matter."),
-  5: b("خانه ۵ — آفرینش و لذت: کودکان، هنر، عشق، ریسک.", "House 5 — creation and pleasure: children, art, love, risk."),
-  6: b("خانه ۶ — کار و سلامتی: خدمات، بیماری، پیشه.", "House 6 — work and health: service, illness, craft."),
-  7: b("خانه ۷ — دیگری و قراردادها: همسر، شریک، مخالف آشکار.", "House 7 — the other and contracts: spouse, partner, open opponent."),
-  8: b("خانه 8 - اشتراک و بحران: ارث، پول دیگری، مرگ و بازگشت.", "House 8 — the shared and crisis: inheritance, the other’s money, death and return."),
-  9: b("خانه ۹ — سفر و اعتقاد: دین، انتشارات، معلم، دور.", "House 9 — travel and belief: religion, publishing, the teacher, the far."),
-  10: b("خانه ۱۰ — مقام و مسلک: حاکمیت، کار عمومی، مادر در سنت.", "House 10 — status and vocation: the sovereign, public work, the mother in tradition."),
-  11: b("خانه ۱۱ — متحدان و امیدها: دوستان، حامیان، آرزوها.", "House 11 — allies and hopes: friends, patrons, the wish."),
-  12: b("خانه ۱۲ — پنهان و عقب نشینی: زندان، خواب، دشمن مخفی، خدمت بی نام.", "House 12 — the hidden and withdrawal: prison, sleep, secret enemy, unnamed service."),
-};
+export { HOUSE_THEME } from "./house-copy";
+
 
 export const ASPECT_NATURE: Record<string, Bi> = {
   CONJUNCTION: b("یک قرآن دو تابع را در یک نقطه ترکیب می‌کند. آنها جدا باقی نمی مانند. آنها یک هویت مشترک دارند. سیارات سازگار متمرکز. موارد ناسازگار تحت کشش فیوز می شوند.", "A conjunction fuses two functions at one point. They do not remain separate; they share an identity. Compatible planets concentrate; incompatible ones fuse under tension."),
@@ -448,11 +436,26 @@ export const NODE_SIGN: Record<string, Bi> = {
 };
 
 export const DIGNITY_NOTE: Record<string, Bi> = {
-  domicile: b("در منزل: سیاره در نشانه خود است و به قول بطلمیوس دارای قوت اساسی است. تابع به عنوان خودش جریان دارد.", "In domicile: the planet is in its own sign and, per Ptolemy, has essential strength. The function flows as itself."),
-  exaltation: b("در شرف: سیاره در اوج بیان است. عملکرد بالا و روشن است، گاهی اوقات یک طرفه.", "In exaltation: the planet is at a peak of expression. The function is high and bright, sometimes one-sided."),
-  detriment: b("در وبال: سیاره روبه‌روی منزل خود است. کارکرد بیگانه است و باید از راه دیگری کار کند.", "In detriment: the planet is opposite its home. The function is foreign and must work by another road."),
-  fall: b("در هبوط: سیاره روبه‌روی شرف است. کارکرد فروکاسته است و نیاز به جبران دارد.", "In fall: the planet is opposite its exaltation. The function is lowered and needs compensation."),
-  peregrine: b("آواره: نه خانه، نه تعالی، نه زیان و نه سقوط. سیاره مهمان است و از ارباب نشانه و از جنبه ها نیرو می گیرد.", "Peregrine: neither home, exaltation, detriment nor fall. The planet is a guest and takes force from the sign’s lord and from aspects."),
+  domicile: b(
+    "در منزل: سیاره در برج خودش است. ستاره‌شناسی سنتی می‌گوید کار این سیاره اینجا راحت‌تر جریان دارد. این یک واقعیت رصدی نیست؛ یک قاعده بطلمیوسی است.",
+    "In domicile: the planet sits in the sign it rules. Traditional astrology says the planet’s job flows more easily here. This is not an observed scientific fact. It is a Ptolemaic rule.",
+  ),
+  exaltation: b(
+    "در شرف: سیاره در برج اوج سنتی است. کار سیاره بلند و یک‌طرفه خوانده می‌شود.",
+    "In exaltation: the planet sits in its traditional peak sign. The job is read as loud and one-sided.",
+  ),
+  detriment: b(
+    "در وبال: سیاره روبه‌روی برج خودش است. ستاره‌شناسی سنتی می‌گوید کار سیاره اینجا سخت‌تر است و باید از راه دیگری انجام شود.",
+    "In detriment: the planet sits opposite the sign it rules. Traditional astrology says the job is harder here and must work by another road.",
+  ),
+  fall: b(
+    "در هبوط: سیاره روبه‌روی جای اوج است. کار سیاره ضعیف‌تر خوانده می‌شود و به کمک سیاره‌های دیگر نیاز دارد.",
+    "In fall: the planet sits opposite its peak sign. The job is read as weaker and in need of help from other planets.",
+  ),
+  peregrine: b(
+    "آواره: سیاره نه در منزل است، نه در شرف، نه در وبال، نه در هبوط. میهمان است. نیرو را از حاکم همین برج و از جنبه‌ها می‌گیرد.",
+    "Peregrine: the planet is not in domicile, exaltation, detriment or fall. It is a guest. It takes force from the ruler of this sign and from aspects.",
+  ),
 };
 
 export const RETROGRADE_NOTE = b(
@@ -555,7 +558,7 @@ export const PATTERN_NOTE: Record<string, Bi> = {
 };
 
 export const HOUSE_LORD_FRAME = b(
-  "در روش لیلی، موضوع هر خانه از حاکمِ برجِ کاسپ خوانده می‌شود: آن سیاره کجا نشسته، در چه شأنی است، و به چه چیز جنبه دارد. خالی بودن خانه موضوع را حذف نمی‌کند.",
-  "In Lilly’s method a house’s topic is read from the lord of the cusp’s sign: where that planet sits, in what dignity, and to what it aspects. An empty house does not delete the topic.",
+  "در روش لیلی، موضوع هر خانه از سیاره حاکمِ برجِ شروع خانه خوانده می‌شود: آن سیاره کجا نشسته، در چه شأنی است، و به چه چیز جنبه دارد. خالی بودن خانه موضوع را حذف نمی‌کند.",
+  "In Lilly’s method a house’s topic is read from the planet that rules the sign on the cusp. Where that planet sits, in what dignity, and what it aspects, tells you how the topic works. An empty house does not delete the topic.",
 );
 

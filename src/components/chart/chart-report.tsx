@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { buildReport, reportStrings, type ReportBlock } from "@/lib/astro/report";
 import { PLANET_NAME, t, tx, type Locale } from "@/lib/astro/i18n";
+import { HOUSE_UI_LEAD } from "@/lib/astro/house-copy";
 import { useLocale } from "@/components/layout/locale-provider";
 import { MAIN_PLANET_IDS } from "@/lib/astro/constants";
 import { PLANET_COLOR, SIGN_COLOR } from "@/lib/astro/chart-theme";
@@ -57,9 +58,9 @@ function Dossier({
         </div>
         {block.meta ? <p className="font-mono text-xs text-muted tabular-nums">{block.meta}</p> : null}
       </header>
-      <div className="mt-3 flex max-w-prose flex-col gap-3 text-sm leading-relaxed text-pretty">
-        {block.body.map((p) => (
-          <p key={p.slice(0, 56)} className="text-fg/90">
+      <div className="mt-3 flex max-w-prose flex-col gap-3 text-[15px] leading-7 text-pretty">
+        {block.body.map((p, i) => (
+          <p key={`${block.id}-${i}`} className="text-fg/90">
             {tx(locale, p)}
           </p>
         ))}
@@ -188,7 +189,11 @@ function HouseLordTable({
   const dig = (d: string) => t(locale, d as "domicile" | "exaltation" | "detriment" | "fall" | "peregrine");
   return (
     <div className="overflow-x-auto rounded-xl bg-surface p-4 shadow-border">
-      <p className="mb-3 max-w-prose text-sm leading-relaxed text-muted">{tx(locale, report.houseLordIntro)}</p>
+      {(report.houseIntro ?? []).map((p) => (
+        <p key={p.slice(0, 48)} className="mb-3 max-w-prose text-sm leading-relaxed text-muted">
+          {tx(locale, p)}
+        </p>
+      ))}
       <table className="w-full min-w-[520px] text-sm">
         <thead className="text-xs text-muted">
           <tr className="border-b border-border text-start">
@@ -250,13 +255,13 @@ export function ChartReportView({
   selectedPlanet?: string | null;
   onSelectPlanet?: (id: string) => void;
 }) {
-  const report = buildReport(chart, "en");
+  const report = buildReport(chart, locale);
   const analysis = report.analysis;
   const el = analysis.counts.elements;
   const md = analysis.counts.modalities;
   const { ensure } = useLocale();
   useEffect(() => {
-    void ensure(reportStrings(report));
+    void ensure([...reportStrings(report), HOUSE_UI_LEAD]);
     // report is rebuilt each render; key off the chart identity instead
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, ensure, chart.julianDay, chart.mode]);
@@ -370,6 +375,9 @@ export function ChartReportView({
 
       <section id="section-houses" className="scroll-mt-28 flex flex-col gap-4">
         <h2 className="font-display text-xl tracking-tight">{t(locale, "houses")}</h2>
+        <p className="max-w-prose text-sm leading-relaxed text-muted">
+          {tx(locale, HOUSE_UI_LEAD)}
+        </p>
         <HouseLordTable report={report} locale={locale} />
         {report.houses.map((b) => (
           <Dossier key={b.id} block={b} locale={locale} />

@@ -1,7 +1,9 @@
 import type { BirthInput } from "./types";
+import { isKnownLocale } from "./languages";
 
 const KEY = "sepehr.saved-charts.v1";
 const LOCALE_KEY = "sepehr.locale";
+const I18N_CACHE = "sepehr.i18n.v1.";
 
 export interface SavedChart {
   id: string;
@@ -37,12 +39,33 @@ export function removeChart(id: string): SavedChart[] {
   return next;
 }
 
-export function loadLocale(): "fa" | "en" {
-  if (typeof window === "undefined") return "fa";
+export function loadLocale(): string {
+  if (typeof window === "undefined") return "en";
   const v = localStorage.getItem(LOCALE_KEY);
-  return v === "en" ? "en" : "fa";
+  if (v && isKnownLocale(v)) return v;
+  return "en";
 }
 
-export function saveLocale(locale: "fa" | "en") {
+export function saveLocale(locale: string) {
   localStorage.setItem(LOCALE_KEY, locale);
+}
+
+export function loadI18nCache(locale: string): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(I18N_CACHE + locale);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveI18nCache(locale: string, table: Record<string, string>) {
+  try {
+    localStorage.setItem(I18N_CACHE + locale, JSON.stringify(table));
+  } catch {
+    /* quota */
+  }
 }

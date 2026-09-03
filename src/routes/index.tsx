@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { computeNatal, EINSTEIN } from "@/lib/astro/chart";
 import { PLANET_COLOR } from "@/lib/astro/chart-theme";
 import type { ChartMode } from "@/lib/astro/constants";
-import { SIGN_FA, t } from "@/lib/astro/i18n";
+import { isRtl, t, tx } from "@/lib/astro/i18n";
 import { planetId } from "@/lib/astro/math";
 import type { ChartResult } from "@/lib/astro/types";
 
@@ -102,7 +102,7 @@ function Home() {
               <Button asChild size="lg">
                 <Link to="/chart">
                   {t(locale, "start")}
-                  <IconArrowLead size={17} rtl={locale === "fa"} />
+                  <IconArrowLead size={17} rtl={isRtl(locale)} />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
@@ -143,26 +143,26 @@ function Home() {
                   />
                   {sun && (
                     <LiveStat
-                      label={locale === "fa" ? "خورشید" : "Sun"}
+                      label={t(locale, "sun")}
                       color={PLANET_COLOR.SUN}
                       value={
                         <>
                           {Math.floor(sun.degree_in_sign)}°
                           <Glyph name={String(sun.sign)} size={14} />
-                          <span>{locale === "fa" ? SIGN_FA[String(sun.sign)] : sun.sign}</span>
+                          <span>{tx(locale, String(sun.sign))}</span>
                         </>
                       }
                     />
                   )}
                   {moon && (
                     <LiveStat
-                      label={locale === "fa" ? "ماه" : "Moon"}
+                      label={t(locale, "moon")}
                       color={PLANET_COLOR.MOON}
                       value={
                         <>
                           {Math.floor(moon.degree_in_sign)}°
                           <Glyph name={String(moon.sign)} size={14} />
-                          <span>{locale === "fa" ? SIGN_FA[String(moon.sign)] : moon.sign}</span>
+                          <span>{tx(locale, String(moon.sign))}</span>
                         </>
                       }
                     />

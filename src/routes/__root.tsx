@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { LocaleProvider } from "@/components/layout/locale-provider";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "سپهر Sepehr";
+const APP_NAME = "Sepehr";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -41,7 +41,7 @@ export const Route = createRootRoute({
 
 function RootDocument() {
   return (
-    <html lang="fa" dir="rtl" suppressHydrationWarning className="antialiased">
+    <html lang="en" dir="ltr" suppressHydrationWarning className="antialiased">
       <head>
         <HeadContent />
       </head>

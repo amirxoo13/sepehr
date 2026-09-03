@@ -1,6 +1,6 @@
 import { ASPECT_COLOR, PLANET_COLOR } from "@/lib/astro/chart-theme";
 import { type ElementName, type ModalityName } from "@/lib/astro/constants";
-import { type Locale } from "@/lib/astro/i18n";
+import { t, tx, type Locale } from "@/lib/astro/i18n";
 import type { ChartResult } from "@/lib/astro/types";
 import {
   angleBodies,
@@ -13,17 +13,17 @@ import {
 import { cn } from "@/lib/utils";
 import { Glyph } from "@/components/chart/glyphs";
 
-const EL_LABEL: Record<ElementName, { fa: string; en: string; key: string }> = {
-  FIRE: { fa: "آتش", en: "FIR", key: "FIR" },
-  EARTH: { fa: "خاک", en: "EAR", key: "EAR" },
-  AIR: { fa: "هوا", en: "AIR", key: "AIR" },
-  WATER: { fa: "آب", en: "WAT", key: "WAT" },
+const EL_KEY: Record<ElementName, "fire" | "earth" | "air" | "water"> = {
+  FIRE: "fire",
+  EARTH: "earth",
+  AIR: "air",
+  WATER: "water",
 };
 
-const MD_LABEL: Record<ModalityName, { fa: string; en: string }> = {
-  CARDINAL: { fa: "کاردینال", en: "CAR" },
-  FIXED: { fa: "ثابت", en: "FIX" },
-  MUTABLE: { fa: "متغیر", en: "MUT" },
+const MD_KEY: Record<ModalityName, "cardinal" | "fixed" | "mutable"> = {
+  CARDINAL: "cardinal",
+  FIXED: "fixed",
+  MUTABLE: "mutable",
 };
 
 function gridBodies(chart: ChartResult) {
@@ -99,9 +99,7 @@ export function AspectTriangle({
         </tbody>
       </table>
       <p className="mt-2 text-xs text-chart-ink/55">
-        {locale === "fa"
-          ? "شبکهٔ جنبه‌ها — a رونده، s جداشونده. قرمز = تربیع/مقابله، آبی = تثلیث/تسدیس، سبز = قرآن."
-          : "Aspect grid — a applying, s separating. Red = square/opposition, blue = trine/sextile, green = conjunction."}
+{t(locale, "aspectGridNote")}
       </p>
     </div>
   );
@@ -121,7 +119,7 @@ export function ElementTable({ chart, locale }: { chart: ChartResult; locale: Lo
             <th className="p-2 text-start font-medium" />
             {modalities.map((m) => (
               <th key={m} className="p-2 text-center font-medium">
-                {locale === "fa" ? MD_LABEL[m].fa : MD_LABEL[m].en} {colTotals[m]}
+                {t(locale, MD_KEY[m])} {colTotals[m]}
               </th>
             ))}
           </tr>
@@ -130,7 +128,7 @@ export function ElementTable({ chart, locale }: { chart: ChartResult; locale: Lo
           {elements.map((el) => (
             <tr key={el} className="border-t border-chart-ink/15">
               <th className="p-2 text-start text-xs font-medium text-chart-ink/70">
-                {locale === "fa" ? EL_LABEL[el].fa : EL_LABEL[el].key} {rowTotals[el]}
+                {t(locale, EL_KEY[el])} {rowTotals[el]}
               </th>
               {modalities.map((md) => {
                 const cell = cells.find((c) => c.element === el && c.modality === md);
@@ -208,10 +206,10 @@ export function ChartSheetHeader({ chart, locale }: { chart: ChartResult; locale
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 text-xs text-chart-ink/60">
       <div>
-        <p className="font-medium text-chart-ink">{locale === "fa" ? "چارت تولد" : "Birth chart"}</p>
+        <p className="font-medium text-chart-ink">{t(locale, "birthChart")}</p>
         <p>
           {chart.subject.date} {chart.subject.time}
-          {chart.subject.timeUnknown ? (locale === "fa" ? " (ساعت نامشخص)" : " (time unknown)") : ""}
+          {chart.subject.timeUnknown ? ` (${tx(locale, "time unknown")})` : ""}
         </p>
         <p>{chart.subject.locationName}</p>
         <p className="font-mono">

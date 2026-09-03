@@ -311,7 +311,7 @@ export function DegreeSign({
   degree: number;
   minute?: number;
   sign: string;
-  locale?: "fa" | "en";
+  locale?: string;
   signName?: string;
   className?: string;
 }) {

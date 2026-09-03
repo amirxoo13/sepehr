@@ -108,11 +108,11 @@ export async function computeNatal(input: BirthInput): Promise<ChartResult> {
   const notes: string[] = [];
   if (n.resolved.isLmt) {
     notes.push(
-      `زمان محلی متوسط (LMT): طول جغرافیایی ${input.longitude.toFixed(4)}° → انحراف ${n.resolved.utcOffsetHours.toFixed(4)} ساعت نسبت به گرینویچ.`,
+      `Local Mean Time (LMT): longitude ${input.longitude.toFixed(4)}° → offset ${n.resolved.utcOffsetHours.toFixed(4)} hours from Greenwich.`,
     );
   }
   if (input.timeUnknown) {
-    notes.push("ساعت تولد نامشخص است؛ ۱۲:۰۰ ظهر فرض شد و خانه‌ها تقریبی‌اند.");
+    notes.push("Birth time unknown; noon was assumed and houses are approximate.");
   }
   return pack({
     mode: "natal",
@@ -154,8 +154,8 @@ export async function computeTransit(natal: BirthInput, when?: Date): Promise<Ch
     houses: n.houses,
     aspects,
     notes: [
-      "ترانزیت: سیارات لحظهٔ انتخاب‌شده نسبت به خانه‌ها و زوایای چارت ناتال.",
-      `ناتال: ${natal.date} ${natal.time} — ${natal.locationName}`,
+      "Transit: chosen-moment planets against the natal houses and angles.",
+      `Natal: ${natal.date} ${natal.time} — ${natal.locationName}`,
     ],
   });
 }
@@ -178,8 +178,8 @@ export async function computeSynastry(a: BirthInput, b: BirthInput): Promise<Cha
     houses: c1.houses,
     aspects,
     notes: [
-      "سیناستری: جنبه‌های متقابل میان دو چارت ناتال با ارب ۰٫۷× ارب ناتال (مطابق بات).",
-      `چرخ: ناتال ${a.name}. جدول جنبه‌ها: ${a.name} × ${b.name}.`,
+      "Synastry: cross-aspects of two natal charts with 0.7× natal orbs (matching the bot).",
+      `Wheel: natal ${a.name}. Aspect table: ${a.name} × ${b.name}.`,
     ],
   });
 }
@@ -209,7 +209,7 @@ export async function computeComposite(a: BirthInput, b: BirthInput): Promise<Ch
     houses,
     aspects,
     notes: [
-      "کامپوزیت: نقطهٔ میانی کوتاه‌ترین کمان هر سیاره، طالع میانی، خانه‌های متساوی از طالع (سیستم E).",
+      "Composite: shortest-arc midpoints, midpoint Ascendant, equal houses from the Ascendant (system E).",
     ],
   });
 }
@@ -253,9 +253,9 @@ export async function computeProgressed(natal: BirthInput, asOf?: Date): Promise
     houses,
     aspects: findAspects(positions),
     notes: [
-      `پروگرس ثانویه: یک روز پس از تولد = یک سال زندگی (سال اعتدالی ${TROPICAL_YEAR_DAYS}).`,
-      `${years.toFixed(2)} سال → تاریخ پروگرس ${progDate}. ساعت تولد حفظ می‌شود.`,
-      `ناتال UTC: ${utc.toISO()}`,
+      `Secondary progression: one day after birth = one year of life (tropical year ${TROPICAL_YEAR_DAYS}).`,
+      `${years.toFixed(2)} years → progressed date ${progDate}. Birth time is kept.`,
+      `Natal UTC: ${utc.toISO()}`,
     ],
   });
 }
@@ -307,9 +307,9 @@ export async function computeSolarReturn(natal: BirthInput, year?: number): Prom
     houses,
     aspects: findAspects(positions),
     notes: [
-      `سولار ریترن ${targetYear}: لحظه‌ای که خورشید به طول ناتال (${natalSunLon.toFixed(4)}°) بازمی‌گردد.`,
-      "تصحیح مرتبهٔ اول: کمان کوتاه ÷ سرعت میانگین خورشید (IAU) — مطابق bot/astro.py.",
-      `زمان بازگشت: ${srUtc.toUTC().toFormat("yyyy-MM-dd HH:mm:ss")} UTC`,
+      `Solar return ${targetYear}: the instant the Sun returns to natal longitude (${natalSunLon.toFixed(4)}°).`,
+      "First-order correction: short arc ÷ mean solar speed (IAU) — matching bot/astro.py.",
+      `Return time: ${srUtc.toUTC().toFormat("yyyy-MM-dd HH:mm:ss")} UTC`,
     ],
   });
 }
@@ -325,7 +325,7 @@ export async function computeNow(
   const { houses, ascendant, mc, cusps } = await calcHouses(swe, jd, lat, lon, houseSystem);
   const positions = await calcPositions(swe, jd, cusps);
   const subject: BirthInput = {
-    name: "اکنون",
+    name: "Now",
     date: now.toFormat("yyyy-MM-dd"),
     time: now.toFormat("HH:mm"),
     latitude: lat,
@@ -346,7 +346,7 @@ export async function computeNow(
     positions,
     houses,
     aspects: findAspects(positions),
-    notes: ["آسمان لحظهٔ جاری (UTC) در مختصات انتخاب‌شده."],
+    notes: ["Current sky (UTC) at the chosen coordinates."],
   });
 }
 
@@ -362,10 +362,10 @@ export async function computeChart(
     case "transit":
       return computeTransit(a, extras?.asOf);
     case "synastry":
-      if (!b) throw new Error("نفر دوم برای سیناستری لازم است");
+      if (!b) throw new Error("Person 2 is required for synastry");
       return computeSynastry(a, b);
     case "composite":
-      if (!b) throw new Error("نفر دوم برای کامپوزیت لازم است");
+      if (!b) throw new Error("Person 2 is required for composite");
       return computeComposite(a, b);
     case "solar_return":
       return computeSolarReturn(a, extras?.solarReturnYear);

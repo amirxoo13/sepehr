@@ -1,10 +1,7 @@
-import { buildReport, type ReportBlock } from "@/lib/astro/report";
-import {
-  PLANET_FA,
-  SIGN_FA,
-  t,
-  type Locale,
-} from "@/lib/astro/i18n";
+import { useEffect } from "react";
+import { buildReport, reportStrings, type ReportBlock } from "@/lib/astro/report";
+import { PLANET_NAME, t, tx, type Locale } from "@/lib/astro/i18n";
+import { useLocale } from "@/components/layout/locale-provider";
 import { MAIN_PLANET_IDS } from "@/lib/astro/constants";
 import { PLANET_COLOR, SIGN_COLOR } from "@/lib/astro/chart-theme";
 import { trueAspectOrb } from "@/lib/astro/math";
@@ -42,7 +39,7 @@ function Dossier({
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="text-xs tracking-wide text-subtle">{block.kicker}</p>
+          <p className="text-xs tracking-wide text-subtle">{tx(locale, block.kicker)}</p>
           <h3 className="flex items-center gap-2 font-display text-xl tracking-tight">
             {pid ? <Glyph name={pid} size={20} color={PLANET_COLOR[pid]} /> : null}
             {pid && onSelect ? (
@@ -51,10 +48,10 @@ function Dossier({
                 className="text-start hover:text-muted"
                 onClick={() => onSelect(pid)}
               >
-                {block.title}
+                {tx(locale, block.title)}
               </button>
             ) : (
-              block.title
+              tx(locale, block.title)
             )}
           </h3>
         </div>
@@ -63,14 +60,14 @@ function Dossier({
       <div className="mt-3 flex max-w-prose flex-col gap-3 text-sm leading-relaxed text-pretty">
         {block.body.map((p) => (
           <p key={p.slice(0, 56)} className="text-fg/90">
-            {p}
+            {tx(locale, p)}
           </p>
         ))}
       </div>
       {block.aspects && block.aspects.length > 0 ? (
         <div className="mt-4 border-t border-border pt-3">
           <p className="mb-2 text-xs tracking-wide text-subtle">
-            {locale === "fa" ? "جنبه‌های این سیاره" : "Aspects of this planet"}
+            {tx(locale, "Aspects of this planet")}
           </p>
           <ul className="flex flex-col gap-3">
             {block.aspects.map((a) => (
@@ -85,9 +82,9 @@ function Dossier({
                 >
                   <Glyph name={a.aspect} size={13} />
                   <Glyph name={a.other} size={13} color={PLANET_COLOR[a.other]} />
-                  {a.title}
+                  {tx(locale, a.title)}
                 </button>
-                <p className="text-sm leading-relaxed text-muted">{a.body}</p>
+                <p className="text-sm leading-relaxed text-muted">{tx(locale, a.body)}</p>
                 <span className="font-mono text-xs text-subtle tabular-nums">{a.meta}</span>
               </li>
             ))}
@@ -151,9 +148,7 @@ function AspectGrid({ chart, locale }: { chart: ChartResult; locale: Locale }) {
         </tbody>
       </table>
       <p className="mt-2 text-xs text-subtle">
-        {locale === "fa"
-          ? "شبکهٔ جنبه‌ها میان ده سیارهٔ کلاسیک. نشان پررنگ = ارب زیر ۲°."
-          : "Aspect grid among the ten classical planets. Strong glyph = orb under 2°."}
+        {tx(locale, "Aspect grid among the ten classical planets. Strong glyph = orb under 2°.")}
       </p>
     </div>
   );
@@ -193,14 +188,14 @@ function HouseLordTable({
   const dig = (d: string) => t(locale, d as "domicile" | "exaltation" | "detriment" | "fall" | "peregrine");
   return (
     <div className="overflow-x-auto rounded-xl bg-surface p-4 shadow-border">
-      <p className="mb-3 max-w-prose text-sm leading-relaxed text-muted">{report.houseLordIntro}</p>
+      <p className="mb-3 max-w-prose text-sm leading-relaxed text-muted">{tx(locale, report.houseLordIntro)}</p>
       <table className="w-full min-w-[520px] text-sm">
         <thead className="text-xs text-muted">
           <tr className="border-b border-border text-start">
-            <th className="py-2 font-medium">{locale === "fa" ? "خانه" : "House"}</th>
-            <th className="py-2 font-medium">{locale === "fa" ? "کاسپ" : "Cusp"}</th>
-            <th className="py-2 font-medium">{locale === "fa" ? "حاکم" : "Lord"}</th>
-            <th className="py-2 font-medium">{locale === "fa" ? "جای حاکم" : "Lord sits"}</th>
+            <th className="py-2 font-medium">{tx(locale, "House")}</th>
+            <th className="py-2 font-medium">{tx(locale, "Cusp")}</th>
+            <th className="py-2 font-medium">{tx(locale, "Lord")}</th>
+            <th className="py-2 font-medium">{tx(locale, "Lord sits")}</th>
             <th className="py-2 font-medium">{t(locale, "dignity")}</th>
           </tr>
         </thead>
@@ -215,7 +210,7 @@ function HouseLordTable({
               <td className="py-2.5 font-mono text-xs">
                 <span className="inline-flex items-center gap-1">
                   <Glyph name={h.cuspSign} size={14} color={SIGN_COLOR[h.cuspSign]} />
-                  {locale === "fa" ? (SIGN_FA[h.cuspSign] ?? h.cuspSign) : h.cuspSign}
+                  {tx(locale, h.cuspSign)}
                 </span>
               </td>
               <td className="py-2.5">
@@ -225,14 +220,14 @@ function HouseLordTable({
                   onClick={() => scrollToId(`planet-${h.ruler}`)}
                 >
                   <Glyph name={h.ruler} size={14} color={PLANET_COLOR[h.ruler]} />
-                  {locale === "fa" ? (PLANET_FA[h.ruler] ?? h.ruler) : h.ruler[0] + h.ruler.slice(1).toLowerCase()}
+                  {tx(locale, PLANET_NAME[h.ruler] ?? h.ruler)}
                 </button>
               </td>
               <td className="py-2.5 font-mono text-xs text-muted">
                 <span className="inline-flex items-center gap-1 font-mono text-xs text-muted">
                   <Glyph name={h.rulerSign} size={14} color={SIGN_COLOR[h.rulerSign]} />
-                  {locale === "fa" ? (SIGN_FA[h.rulerSign] ?? h.rulerSign) : h.rulerSign}
-                  {h.rulerHouse ? ` · ${locale === "fa" ? "خ" : "H"}${h.rulerHouse}` : ""}
+                  {tx(locale, h.rulerSign)}
+                  {h.rulerHouse ? ` · ${tx(locale, "H")}${h.rulerHouse}` : ""}
                 </span>
               </td>
               <td className="py-2.5 text-xs text-subtle">{dig(h.dignity)}</td>
@@ -255,18 +250,24 @@ export function ChartReportView({
   selectedPlanet?: string | null;
   onSelectPlanet?: (id: string) => void;
 }) {
-  const report = buildReport(chart, locale);
+  const report = buildReport(chart, "en");
   const analysis = report.analysis;
   const el = analysis.counts.elements;
   const md = analysis.counts.modalities;
+  const { ensure } = useLocale();
+  useEffect(() => {
+    void ensure(reportStrings(report));
+    // report is rebuilt each render; key off the chart identity instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, ensure, chart.julianDay, chart.mode]);
 
   const toc: { id: string; label: string }[] = [
-    { id: "section-portrait", label: locale === "fa" ? "پرتره" : "Portrait" },
-    { id: "section-big", label: locale === "fa" ? "سه نقطه" : "Big three" },
+    { id: "section-portrait", label: tx(locale, "Portrait") },
+    { id: "section-big", label: tx(locale, "Big three") },
     { id: "section-planets", label: t(locale, "planets") },
     { id: "section-houses", label: t(locale, "houses") },
     { id: "section-aspects", label: t(locale, "aspects") },
-    { id: "section-pattern", label: locale === "fa" ? "الگو" : "Pattern" },
+    { id: "section-pattern", label: tx(locale, "Pattern") },
   ];
 
   return (
@@ -290,12 +291,12 @@ export function ChartReportView({
       <section id="section-portrait" className="scroll-mt-28 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">
         <div className="flex flex-col gap-3">
           <h2 className="font-display text-xl tracking-tight">
-            {locale === "fa" ? "پرترهٔ این نقشه" : "Portrait of this map"}
+            {tx(locale, "Portrait of this map")}
           </h2>
-          <p className="text-xs text-subtle">{report.frame}</p>
+          <p className="text-xs text-subtle">{tx(locale, report.frame)}</p>
           <div className="flex max-w-prose flex-col gap-3 text-sm leading-relaxed text-pretty">
             {report.portrait.map((p) => (
-              <p key={p.slice(0, 48)}>{p}</p>
+              <p key={p.slice(0, 48)}>{tx(locale, p)}</p>
             ))}
           </div>
         </div>
@@ -312,37 +313,24 @@ export function ChartReportView({
             />
           </div>
           <div>
-            <p className="mb-2 text-xs text-subtle">{locale === "fa" ? "کیفیت" : "Mode"}</p>
+            <p className="mb-2 text-xs text-subtle">{tx(locale, "Mode")}</p>
             <Bars
               items={[
-                { key: "C", label: locale === "fa" ? "اصلی" : "Cardinal", n: md.CARDINAL, color: "var(--fg)" },
-                { key: "F", label: locale === "fa" ? "ثابت" : "Fixed", n: md.FIXED, color: "var(--muted)" },
-                { key: "M", label: locale === "fa" ? "متغیر" : "Mutable", n: md.MUTABLE, color: "var(--subtle)" },
+                { key: "C", label: tx(locale, "Cardinal"), n: md.CARDINAL, color: "var(--fg)" },
+                { key: "F", label: tx(locale, "Fixed"), n: md.FIXED, color: "var(--muted)" },
+                { key: "M", label: tx(locale, "Mutable"), n: md.MUTABLE, color: "var(--subtle)" },
               ]}
             />
           </div>
           <p className="text-xs text-muted">
-            {locale === "fa"
-              ? `${analysis.sect === "day" ? "چارت روزانه" : "چارت شبانه"} · فاز ${
-                  {
-                    new: "ماه نو",
-                    crescent: "هلال",
-                    first_quarter: "تربیع اول",
-                    gibbous: "محدب",
-                    full: "ماه کامل",
-                    disseminating: "پخش",
-                    last_quarter: "تربیع آخر",
-                    balsamic: "حنوط",
-                  }[analysis.lunarPhase.name]
-                }`
-              : `${analysis.sect} chart · ${analysis.lunarPhase.name.replace("_", " ")} Moon`}
+            {tx(locale, `${analysis.sect} chart · ${analysis.lunarPhase.name.replace("_", " ")} Moon`)}
           </p>
         </aside>
       </section>
 
       <section id="section-big" className="scroll-mt-28 flex flex-col gap-4">
         <h2 className="font-display text-xl tracking-tight">
-          {locale === "fa" ? "سه نقطهٔ اصلی" : "The big three"}
+          {tx(locale, "The big three")}
         </h2>
         {report.bigThree.map((b) => (
           <Dossier
@@ -364,9 +352,10 @@ export function ChartReportView({
       <section id="section-planets" className="scroll-mt-28 flex flex-col gap-4">
         <h2 className="font-display text-xl tracking-tight">{t(locale, "planets")}</h2>
         <p className="max-w-prose text-sm text-muted">
-          {locale === "fa"
-            ? "هر پرونده از طول محاسبه‌شدهٔ همین تولد ساخته شده: کارکرد سیاره، برج، خانه، شأن بطلمیوسی، رجوع، احتراق، خانه‌هایی که حاکم آن‌هاست، و تمام جنبه‌های عمده."
-            : "Each dossier is keyed off this birth’s computed longitude: the planet’s function, sign, house, Ptolemaic dignity, retrograde, combustion, houses it rules, and every major aspect."}
+          {tx(
+            locale,
+            "Each dossier is keyed off this birth’s computed longitude: the planet’s function, sign, house, Ptolemaic dignity, retrograde, combustion, houses it rules, and every major aspect.",
+          )}
         </p>
         {report.planets.map((b) => (
           <Dossier
@@ -391,7 +380,7 @@ export function ChartReportView({
         <h2 className="font-display text-xl tracking-tight">{t(locale, "aspects")}</h2>
         <AspectGrid chart={chart} locale={locale} />
         <p className="text-sm text-muted">
-          {locale === "fa" ? "نزدیک‌ترین جنبه‌ها — وزن بیشتر در خوانش." : "Tightest aspects — higher weight in the reading."}
+          {tx(locale, "Tightest aspects — higher weight in the reading.")}
         </p>
         {report.aspects.map((b) => (
           <Dossier key={b.id} block={b} locale={locale} />
@@ -401,7 +390,7 @@ export function ChartReportView({
       {report.pattern.length > 0 && (
         <section id="section-pattern" className="scroll-mt-28 flex flex-col gap-4">
           <h2 className="font-display text-xl tracking-tight">
-            {locale === "fa" ? "الگوی کلی" : "Overall pattern"}
+            {tx(locale, "Overall pattern")}
           </h2>
           {report.pattern.map((b) => (
             <Dossier key={b.id} block={b} locale={locale} />
@@ -412,7 +401,7 @@ export function ChartReportView({
       {report.extra.length > 0 && (
         <section className="flex flex-col gap-4">
           <h2 className="font-display text-xl tracking-tight">
-            {locale === "fa" ? "نقاط اضافی" : "Further points"}
+            {tx(locale, "Further points")}
           </h2>
           {report.extra.map((b) => (
             <Dossier key={b.id} block={b} locale={locale} />
@@ -421,9 +410,10 @@ export function ChartReportView({
       )}
 
       <p className="max-w-prose text-xs leading-relaxed text-subtle">
-        {locale === "fa"
-          ? "این متن تفسیر سنتی غربی استوایی است، نه علم تجربی و نه پیش‌بینی پزشکی، حقوقی یا مالی. هر بند از طول محاسبه‌شدهٔ همین چارت ساخته شده — برج، خانه، جنبه، فرقه، فاز ماه، حاکم طالع و خداوندگاران کاسپ. منبع: بطلمیوس، لیلی، و تناظرهای استاندارد CAE."
-          : "Traditional Western tropical interpretation, not empirical science and not medical, legal or financial advice. Every paragraph is keyed off this chart’s computed longitudes — sign, house, aspect, sect, lunar phase, chart ruler and cusp lords. Sources: Ptolemy, Lilly, and standard CAE correspondences."}
+        {tx(
+          locale,
+          "Traditional Western tropical interpretation, not empirical science and not medical, legal or financial advice. Every paragraph is keyed off this chart’s computed longitudes — sign, house, aspect, sect, lunar phase, chart ruler and cusp lords. Sources: Ptolemy, Lilly, and standard CAE correspondences.",
+        )}
       </p>
     </div>
   );

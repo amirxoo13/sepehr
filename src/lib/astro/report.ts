@@ -32,12 +32,7 @@ import {
   aspectKey,
   pick,
 } from "./cookbook";
-import type { Locale } from "./i18n";
-import {
-  ASPECT_FA,
-  PLANET_FA,
-  SIGN_FA,
-} from "./i18n";
+import { PLANET_NAME, type Locale } from "./i18n";
 import { angularDistance, isMainPlanet, planetId, trueAspectOrb } from "./math";
 import { dignityOf, type Dignity } from "./meanings";
 import type { AspectData, ChartResult, PlanetPosition } from "./types";
@@ -76,14 +71,14 @@ export interface ChartReport {
   analysis: ChartAnalysis;
 }
 
-function locSign(sign: string, locale: Locale): string {
-  return locale === "fa" ? (SIGN_FA[sign] ?? sign) : sign;
+function locSign(sign: string, _locale?: Locale): string {
+  return sign;
 }
-function locPlanet(id: string, locale: Locale): string {
-  return locale === "fa" ? (PLANET_FA[id] ?? id) : id[0] + id.slice(1).toLowerCase();
+function locPlanet(id: string, _locale?: Locale): string {
+  return PLANET_NAME[id] ?? id[0] + id.slice(1).toLowerCase();
 }
-function locAspect(name: string, locale: Locale): string {
-  return locale === "fa" ? (ASPECT_FA[name] ?? name) : name.toLowerCase();
+function locAspect(name: string, _locale?: Locale): string {
+  return name.toLowerCase();
 }
 
 function fmtDms(p: PlanetPosition): string {
@@ -104,15 +99,8 @@ function fmtLon(degInSign: number): string {
   return `${d}°${m}′`;
 }
 
-function dignityWord(dig: Dignity, locale: Locale): string {
-  const fa: Record<Dignity, string> = {
-    domicile: "منزل",
-    exaltation: "شرف",
-    detriment: "وبال",
-    fall: "هبوط",
-    peregrine: "آواره",
-  };
-  return locale === "fa" ? fa[dig] : dig;
+function dignityWord(dig: Dignity, _locale?: Locale): string {
+  return dig;
 }
 
 function aspectLinesFor(id: string, chart: ChartResult, locale: Locale, synastry: boolean): AspectLine[] {
@@ -375,7 +363,8 @@ function portrait(chart: ChartResult, a: ChartAnalysis, locale: Locale): string[
   return lines.filter(Boolean);
 }
 
-export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
+export function buildReport(chart: ChartResult, _locale?: Locale): ChartReport {
+  const locale: Locale = "en";
   const a = analyzeChart(chart);
   const synastry = chart.mode === "synastry" || chart.mode === "transit";
 
@@ -598,6 +587,22 @@ export function buildReport(chart: ChartResult, locale: Locale): ChartReport {
     extra,
     analysis: a,
   };
+}
+
+export function reportStrings(r: ChartReport): string[] {
+  const out: string[] = [r.frame, r.houseLordIntro, ...r.portrait];
+  const eat = (b: ReportBlock) => {
+    out.push(b.kicker, b.title, b.meta ?? "", ...b.body);
+    for (const a of b.aspects ?? []) out.push(a.title, a.body);
+  };
+  r.bigThree.forEach(eat);
+  eat(r.ruler);
+  r.planets.forEach(eat);
+  r.aspects.forEach(eat);
+  r.houses.forEach(eat);
+  r.pattern.forEach(eat);
+  r.extra.forEach(eat);
+  return [...new Set(out.filter((s) => Boolean(s && s.trim())))];
 }
 
 export { analyzeChart };

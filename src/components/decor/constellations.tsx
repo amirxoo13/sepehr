@@ -174,9 +174,9 @@ export function Constellation({
       viewBox="-6 -6 112 112"
       className={cn("overflow-visible", className)}
       role="img"
-      aria-label={`${f.fa} — ${f.en}`}
+      aria-label={f.en}
     >
-      <title>{`${f.fa} · ${f.en}`}</title>
+      <title>{f.en}</title>
       <g stroke={color} strokeOpacity={lineOpacity} strokeWidth="0.6" strokeLinecap="round">
         {f.lines.map(([a, b], i) => {
           const p = byId[a]!;

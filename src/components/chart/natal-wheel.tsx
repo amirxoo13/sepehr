@@ -65,7 +65,7 @@ function sectorPath(
 export function NatalWheel({
   chart,
   className,
-  locale = "fa",
+  locale = "en",
   compact = false,
   selected = null,
   onSelect,
@@ -73,7 +73,7 @@ export function NatalWheel({
 }: {
   chart: ChartResult;
   className?: string;
-  locale?: "fa" | "en";
+  locale?: string;
   compact?: boolean;
   selected?: string | null;
   onSelect?: (id: string) => void;

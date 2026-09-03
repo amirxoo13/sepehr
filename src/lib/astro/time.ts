@@ -22,22 +22,22 @@ export class BirthTimeError extends Error {
 
 export function validateDate(dateStr: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    throw new BirthTimeError("فرمت تاریخ باید YYYY-MM-DD باشد. مثال: 1879-03-14");
+    throw new BirthTimeError("Date must be YYYY-MM-DD. Example: 1879-03-14");
   }
   const dt = DateTime.fromISO(dateStr, { zone: "utc" });
   if (!dt.isValid) {
-    throw new BirthTimeError("تاریخ نامعتبر است. از فرمت YYYY-MM-DD استفاده کنید.");
+    throw new BirthTimeError("Invalid date. Use YYYY-MM-DD.");
   }
   return dateStr;
 }
 
 export function validateTime(timeStr: string): string {
   if (!/^\d{2}:\d{2}$/.test(timeStr)) {
-    throw new BirthTimeError("فرمت زمان باید HH:MM باشد. مثال: 11:30");
+    throw new BirthTimeError("Time must be HH:MM. Example: 11:30");
   }
   const [h, m] = timeStr.split(":").map(Number);
   if (h! < 0 || h! > 23 || m! < 0 || m! > 59) {
-    throw new BirthTimeError("ساعت باید بین 00:00 و 23:59 باشد.");
+    throw new BirthTimeError("Hour must be between 00:00 and 23:59.");
   }
   return timeStr;
 }
@@ -85,7 +85,7 @@ export function resolveBirthUtc(
   const zone = timezoneName || "UTC";
   const local = DateTime.fromISO(`${dateStr}T${timeStr}:00`, { zone });
   if (!local.isValid) {
-    throw new BirthTimeError(`منطقه زمانی نامعتبر: ${zone}`);
+    throw new BirthTimeError(`Invalid timezone: ${zone}`);
   }
   const utc = local.toUTC();
   return {

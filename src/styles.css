@@ -109,9 +109,9 @@
 
   /* Persian display text needs its own tracking — Cormorant has no Arabic
      coverage, so :lang(fa) headings fall through to Vazirmatn. */
-  :lang(fa) h1,
-  :lang(fa) h2,
-  :lang(fa) h3 {
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3 {
     letter-spacing: 0;
     font-weight: 600;
   }

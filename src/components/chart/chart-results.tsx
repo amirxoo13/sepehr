@@ -1,18 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NatalWheel, downloadWheelSvg } from "@/components/chart/natal-wheel";
 import { AspectTriangle, ChartSheetHeader, DegreeStrip, ElementTable } from "@/components/chart/chart-tables";
 import { ChartReportView } from "@/components/chart/chart-report";
+import { useLocale } from "@/components/layout/locale-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ANGLE_HOUSES } from "@/lib/astro/constants";
 import { analyzeChart } from "@/lib/astro/analyze";
 import { ASPECT_COLOR, PLANET_COLOR } from "@/lib/astro/chart-theme";
 import {
-  ASPECT_FA,
-  PLANET_FA,
-  SIGN_FA,
+  ASPECT_NAME,
+  PLANET_NAME,
   t,
+  tx,
   type Locale,
 } from "@/lib/astro/i18n";
 import { isMainPlanet, planetId, trueAspectOrb } from "@/lib/astro/math";
@@ -45,10 +46,15 @@ export function ChartResults({
   const [aiBusy, setAiBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const { ensure } = useLocale();
   const analysis = analyzeChart(chart);
   const sun = analysis.sun;
   const moon = analysis.moon;
   const extras = wheelBodies(chart).filter((b) => !isMainPlanet(b) && b.id !== "SOUTH_NODE" && b.id !== "FORTUNE");
+
+  useEffect(() => {
+    void ensure(chart.notes);
+  }, [locale, ensure, chart.julianDay, chart.mode]);
 
   function selectPlanet(id: string) {
     setSelected(id);
@@ -72,26 +78,26 @@ export function ChartResults({
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Meta
-            label={locale === "fa" ? "طالع" : "ASC"}
-            value={<DegreeSign degree={chart.ascendant % 30} sign={signOf(chart.ascendant)} signName={locale === "fa" ? SIGN_FA[signOf(chart.ascendant)] : signOf(chart.ascendant)} />}
-            note={locale === "fa" ? `حاکم ${PLANET_FA[analysis.chartRuler] ?? analysis.chartRuler}` : `ruler ${analysis.chartRuler}`}
+            label={t(locale, "asc")}
+            value={<DegreeSign degree={chart.ascendant % 30} sign={signOf(chart.ascendant)} signName={tx(locale, signOf(chart.ascendant))} />}
+            note={`${t(locale, "ruler")} ${tx(locale, PLANET_NAME[analysis.chartRuler] ?? analysis.chartRuler)}`}
           />
           <Meta
             label="MC"
-            value={<DegreeSign degree={chart.mediumCoeli % 30} sign={signOf(chart.mediumCoeli)} signName={locale === "fa" ? SIGN_FA[signOf(chart.mediumCoeli)] : signOf(chart.mediumCoeli)} />}
+            value={<DegreeSign degree={chart.mediumCoeli % 30} sign={signOf(chart.mediumCoeli)} signName={tx(locale, signOf(chart.mediumCoeli))} />}
           />
           {sun && (
             <Meta
-              label={locale === "fa" ? "خورشید" : "Sun"}
-              value={<DegreeSign degree={sun.degree_in_sign} minute={sun.degree_minute} sign={String(sun.sign)} signName={locale === "fa" ? SIGN_FA[String(sun.sign)] : String(sun.sign)} />}
-              note={sun.house ? (locale === "fa" ? `خانه ${sun.house}` : `house ${sun.house}`) : undefined}
+              label={t(locale, "sun")}
+              value={<DegreeSign degree={sun.degree_in_sign} minute={sun.degree_minute} sign={String(sun.sign)} signName={tx(locale, String(sun.sign))} />}
+              note={sun.house ? `${t(locale, "house")} ${sun.house}` : undefined}
             />
           )}
           {moon && (
             <Meta
-              label={locale === "fa" ? "ماه" : "Moon"}
-              value={<DegreeSign degree={moon.degree_in_sign} minute={moon.degree_minute} sign={String(moon.sign)} signName={locale === "fa" ? SIGN_FA[String(moon.sign)] : String(moon.sign)} />}
-              note={moon.house ? (locale === "fa" ? `خانه ${moon.house}` : `house ${moon.house}`) : undefined}
+              label={t(locale, "moon")}
+              value={<DegreeSign degree={moon.degree_in_sign} minute={moon.degree_minute} sign={String(moon.sign)} signName={tx(locale, String(moon.sign))} />}
+              note={moon.house ? `${t(locale, "house")} ${moon.house}` : undefined}
             />
           )}
         </div>
@@ -111,7 +117,7 @@ export function ChartResults({
               setSaved(true);
             }}
           >
-            {saved ? (locale === "fa" ? "ذخیره شد" : "Saved") : t(locale, "save")}
+            {saved ? t(locale, "savedOk") : t(locale, "save")}
           </Button>
           <Button
             type="button"
@@ -152,7 +158,7 @@ export function ChartResults({
         </div>
         <div className="mt-8 border-t border-chart-ink/15 pt-5">
           <p className="mb-3 text-xs text-chart-ink/60">
-            {locale === "fa" ? "نوار درجه داخل برج (۰°–۳۰°)" : "Degree-in-sign strip (0°–30°)"}
+            {t(locale, "degreeStrip")}
           </p>
           <DegreeStrip chart={chart} />
         </div>
@@ -164,7 +170,7 @@ export function ChartResults({
             <thead className="text-xs text-muted">
               <tr className="border-b border-border text-start">
                 <th className="py-1.5 font-medium">{t(locale, "planets")}</th>
-                <th className="py-1.5 font-medium">{locale === "fa" ? "درجه" : "Long."}</th>
+                <th className="py-1.5 font-medium">{t(locale, "longitude")}</th>
                 <th className="py-1.5 text-end font-medium">{t(locale, "house")}</th>
                 <th className="hidden py-1.5 ps-2 text-end font-medium sm:table-cell">{t(locale, "dignity")}</th>
               </tr>
@@ -172,7 +178,7 @@ export function ChartResults({
             <tbody>
               {chart.positions.filter(isMainPlanet).map((p) => {
                 const id = planetId(p);
-                const name = locale === "fa" ? (PLANET_FA[id] ?? p.name) : p.name;
+                const name = tx(locale, PLANET_NAME[id] ?? p.name);
                 const dig = dignityOf(id, String(p.sign));
                 const on = selected === id;
                 return (
@@ -196,7 +202,7 @@ export function ChartResults({
                         degree={p.degree_in_sign}
                         minute={p.degree_minute}
                         sign={String(p.sign)}
-                        signName={locale === "fa" ? SIGN_FA[String(p.sign)] : String(p.sign)}
+                        signName={tx(locale, String(p.sign))}
                       />
                     </td>
                     <td className="py-1.5 text-end text-xs tabular-nums text-subtle">
@@ -210,7 +216,7 @@ export function ChartResults({
               })}
               {extras.map((p) => {
                 const on = selected === p.id;
-                const name = locale === "fa" ? (PLANET_FA[p.id] ?? p.name) : p.name;
+                const name = tx(locale, PLANET_NAME[p.id] ?? p.name);
                 return (
                   <tr
                     key={p.id}
@@ -229,7 +235,7 @@ export function ChartResults({
                         degree={p.degree_in_sign}
                         minute={p.degree_minute}
                         sign={String(p.sign)}
-                        signName={locale === "fa" ? SIGN_FA[String(p.sign)] : String(p.sign)}
+                        signName={tx(locale, String(p.sign))}
                       />
                     </td>
                     <td className="py-1.5 text-end text-xs tabular-nums text-subtle">{p.house ?? "—"}</td>
@@ -241,9 +247,10 @@ export function ChartResults({
           </table>
         </div>
         <p className="text-xs leading-relaxed text-muted">
-          {locale === "fa"
-            ? "روی سیاره در چرخ یا جدول بزنید تا پروندهٔ تفسیری همان سیاره باز شود. چرخ سفید همان استاندارد Astrodienst/Astro-Seek است: طالع ساعت ۹، خانه‌ها پادساعت‌گرد، تیک هر درجه، جنبه‌های قرمز/آبی."
-            : "Click a planet on the wheel or table to open that planet’s reading. The white wheel follows Astrodienst/Astro-Seek: ASC at 9 o’clock, houses counterclockwise, 1° ticks, red/blue aspects."}
+          {tx(
+            locale,
+            "Click a planet on the wheel or table to open that planet’s reading. The wheel follows Astrodienst/Astro-Seek: ASC at 9 o’clock, houses counterclockwise, 1° ticks, red/blue aspects.",
+          )}
         </p>
       </div>
 
@@ -275,15 +282,15 @@ export function ChartResults({
                 >
                   <span className="text-muted">
                     {angle ? `${angle[1]} · ` : ""}
-                    {locale === "fa" ? `خانه ${h.house}` : `House ${h.house}`}
+                    {tx(locale, `House ${h.house}`)}
                     {lord ? (
                       <span className="ms-2 inline-flex items-center gap-1 text-xs text-subtle">
                         <Glyph name={lord.ruler} size={13} color={PLANET_COLOR[lord.ruler]} />
-                        {locale === "fa" ? (PLANET_FA[lord.ruler] ?? lord.ruler) : lord.ruler}
+                        {tx(locale, PLANET_NAME[lord.ruler] ?? lord.ruler)}
                       </span>
                     ) : null}
                   </span>
-                  <DegreeSign degree={h.degree_in_sign} sign={String(h.sign)} signName={locale === "fa" ? SIGN_FA[String(h.sign)] : String(h.sign)} />
+                  <DegreeSign degree={h.degree_in_sign} sign={String(h.sign)} signName={tx(locale, String(h.sign))} />
                 </div>
               );
             })}
@@ -293,9 +300,9 @@ export function ChartResults({
           <ul className="flex flex-col divide-y divide-border">
             {chart.aspects.map((a, i) => {
               const orb = trueAspectOrb(a);
-              const p1 = locale === "fa" ? (PLANET_FA[a.planet1] ?? a.planet1) : a.planet1;
-              const p2 = locale === "fa" ? (PLANET_FA[a.planet2] ?? a.planet2) : a.planet2;
-              const an = locale === "fa" ? (ASPECT_FA[a.aspect_name] ?? a.aspect_name) : a.aspect_name;
+              const p1 = tx(locale, PLANET_NAME[a.planet1] ?? a.planet1);
+              const p2 = tx(locale, PLANET_NAME[a.planet2] ?? a.planet2);
+              const an = tx(locale, ASPECT_NAME[a.aspect_name] ?? a.aspect_name);
               return (
                 <li key={i} className="flex items-center justify-between gap-3 py-3 text-sm">
                   <span className="inline-flex items-center gap-2">
@@ -315,12 +322,13 @@ export function ChartResults({
         <TabsContent value="method" className="mt-4">
           <ul className="flex flex-col gap-2 text-sm text-muted">
             {chart.notes.map((n) => (
-              <li key={n}>{n}</li>
+              <li key={n}>{tx(locale, n)}</li>
             ))}
             <li>
-              {locale === "fa"
-                ? "زودیاک استوایی. ارب‌ها از swiss-ephemeris-api (قرآن/مقابله ۱۰°، تثلیث/تربیع ۸°، تسدیس ۶°)."
-                : "Tropical zodiac. Orbs from swiss-ephemeris-api (conj/opp 10°, tri/sqr 8°, sex 6°)."}
+              {tx(
+                locale,
+                "Tropical zodiac. Orbs from swiss-ephemeris-api (conj/opp 10°, tri/sqr 8°, sex 6°).",
+              )}
             </li>
           </ul>
         </TabsContent>

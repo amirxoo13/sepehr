@@ -140,12 +140,8 @@ function ChartPage() {
         ) : (
           <div className="flex min-h-80 items-center justify-center rounded-xl bg-surface p-8 text-center text-sm text-muted shadow-border">
             {MODES_NEEDING_SECOND_PERSON.has(current)
-              ? locale === "fa"
-                ? "دو تولد را وارد کنید."
-                : "Enter two birth records."
-              : locale === "fa"
-                ? "تاریخ، ساعت و مکان را وارد کنید تا چرخ رسم شود."
-                : "Enter date, time and place to draw the wheel."}
+              ? t(locale, "enterTwo")
+              : t(locale, "enterChart")}
           </div>
         )}
       </section>

@@ -6,10 +6,10 @@
  * Not generated biography — each paragraph is looked up from THIS chart's
  * computed sign, house and aspect.
  */
-export type Bi = { fa: string; en: string };
+export type Bi = string;
 
-export function b(fa: string, en: string): Bi {
-  return { fa, en };
+export function b(_fa: string, en: string): Bi {
+  return en;
 }
 
 export const RISING: Record<string, Bi> = {
@@ -480,9 +480,9 @@ export const MODE_FRAME: Record<string, Bi> = {
   now: b("آسمان الان: نقشه این لحظه برای مختصات انتخاب شده. خوانشی از جو، نه از هویت تولد.", "Sky now: the map of this instant for the chosen coordinates. A reading of atmosphere, not of birth-identity."),
 };
 
-export function pick(bi: Bi | undefined, locale: "fa" | "en"): string {
+export function pick(bi: Bi | undefined, _locale?: string): string {
   if (!bi) return "";
-  return locale === "fa" ? bi.fa : bi.en;
+  return bi;
 }
 
 export function aspectKey(p1: string, p2: string, aspect: string): string {

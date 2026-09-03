@@ -1,8 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { t, type Locale } from "@/lib/astro/i18n";
-import { Button } from "@/components/ui/button";
+import { LANGUAGES, t } from "@/lib/astro/i18n";
 import { Cosmos } from "@/components/layout/cosmos";
-import { IconGlobeGrid, IconArmillary } from "@/components/icons/astro-icons";
+import { IconArmillary } from "@/components/icons/astro-icons";
 import { cn } from "@/lib/utils";
 
 const NAV: { to: string; key: "start" | "skyNow" | "about" }[] = [
@@ -14,10 +13,12 @@ const NAV: { to: string; key: "start" | "skyNow" | "about" }[] = [
 export function Shell({
   locale,
   onLocale,
+  translating,
   children,
 }: {
-  locale: Locale;
-  onLocale: (l: Locale) => void;
+  locale: string;
+  onLocale: (l: string) => void;
+  translating?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -41,7 +42,7 @@ export function Shell({
             </span>
           </Link>
 
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-2">
             {NAV.map((item) => {
               const on = pathname === item.to;
               return (
@@ -60,18 +61,27 @@ export function Shell({
                 </Link>
               );
             })}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={locale === "fa" ? "تغییر زبان" : "Switch language"}
-              onClick={() => onLocale(locale === "fa" ? "en" : "fa")}
+            <label className="sr-only" htmlFor="lang-select">
+              {t(locale, "language")}
+            </label>
+            <select
+              id="lang-select"
+              value={locale}
+              onChange={(e) => onLocale(e.target.value)}
+              aria-label={t(locale, "language")}
+              className="h-11 max-w-[10.5rem] rounded-md bg-surface-2 px-2 text-sm text-fg shadow-border"
             >
-              <IconGlobeGrid size={18} />
-            </Button>
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.native}
+                </option>
+              ))}
+            </select>
+            {translating ? (
+              <span className="hidden text-[0.65rem] text-subtle sm:inline">{t(locale, "translating")}</span>
+            ) : null}
           </nav>
         </div>
-        {/* gold hairline that fades at the edges, like a sightline */}
         <div className="rule-fade absolute inset-x-0 -bottom-px" />
       </header>
 

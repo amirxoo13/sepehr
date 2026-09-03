@@ -4,7 +4,7 @@ import { EINSTEIN, SHIRAZ_1970 } from "@/lib/astro/chart";
 import { CITIES, looksLikeCoordinates, parseCoordinates, searchCities } from "@/lib/astro/cities";
 import { HOUSE_SYSTEMS, type ChartMode, type HouseSystemId } from "@/lib/astro/constants";
 import { geocodePlace } from "@/lib/astro/geocode.functions";
-import { t, type Locale } from "@/lib/astro/i18n";
+import { t, tx, type Locale } from "@/lib/astro/i18n";
 import type { BirthInput, City, GeocodeHit } from "@/lib/astro/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +72,7 @@ function fromInput(input: BirthInput): BirthDraft {
 }
 
 function resolveTimezone(d: BirthDraft): string {
-  if (!d.place) throw new Error("مکان انتخاب نشده");
+  if (!d.place) throw new Error("Place is not selected");
   if (d.tzMode === "lmt") return "LMT";
   if (d.tzMode === "iana") return d.place.tz;
   return Number(d.gy) < 1900 ? "LMT" : d.place.tz;
@@ -81,7 +81,7 @@ function resolveTimezone(d: BirthDraft): string {
 function toInput(d: BirthDraft): BirthInput {
   const date = `${d.gy.padStart(4, "0")}-${d.gm.padStart(2, "0")}-${d.gd.padStart(2, "0")}`;
   const time = d.timeUnknown ? "12:00" : `${d.hour.padStart(2, "0")}:${d.minute.padStart(2, "0")}`;
-  if (!d.place) throw new Error("مکان انتخاب نشده");
+  if (!d.place) throw new Error("Place is not selected");
   return {
     name: d.name.trim() || "—",
     date,
@@ -151,7 +151,7 @@ function PersonFields({
   function pickCity(c: City) {
     setDraft({
       ...draft,
-      cityQuery: locale === "fa" ? `${c.nameFa}، ${c.countryFa}` : `${c.name}, ${c.country}`,
+      cityQuery: `${c.name}, ${c.country}`,
       place: {
         name: `${c.name}, ${c.country}`,
         lat: c.lat,
@@ -198,7 +198,7 @@ function PersonFields({
           >
             {HOUSE_SYSTEMS.map((h) => (
               <option key={h.id} value={h.id}>
-                {locale === "fa" ? h.labelFa : h.labelEn}
+                {tx(locale, h.labelEn)}
               </option>
             ))}
           </select>
@@ -298,8 +298,8 @@ function PersonFields({
                   className="flex min-h-11 w-full items-center justify-between rounded-md px-3 text-start text-sm hover:bg-surface-2"
                   onClick={() => pickCity(c)}
                 >
-                  <span>{locale === "fa" ? c.nameFa : c.name}</span>
-                  <span className="text-xs text-muted">{locale === "fa" ? c.countryFa : c.country}</span>
+                  <span>{c.name}</span>
+                  <span className="text-xs text-muted">{c.country}</span>
                 </button>
               </li>
             ))}
@@ -438,7 +438,7 @@ export function BirthForm({
         </Field>
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm text-danger">{tx(locale, error)}</p>}
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={busy}>

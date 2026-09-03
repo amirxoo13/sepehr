@@ -98,11 +98,11 @@ export function looksLikeCoordinates(text: string): boolean {
 
 export function parseCoordinates(text: string): { lat: number; lon: number } {
   const parts = text.split(",").map((p) => p.trim());
-  if (parts.length !== 2) throw new Error("فرمت مختصات: lat,lon — مثال 35.69,51.39");
+  if (parts.length !== 2) throw new Error("Coordinates format: lat,lon — example 35.69,51.39");
   const lat = Number(parts[0]);
   const lon = Number(parts[1]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error("مختصات باید عدد باشند.");
-  if (lat < -90 || lat > 90) throw new Error("عرض جغرافیایی باید بین ‎-90 و 90 باشد.");
-  if (lon < -180 || lon > 180) throw new Error("طول جغرافیایی باید بین ‎-180 و 180 باشد.");
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error("Coordinates must be numbers.");
+  if (lat < -90 || lat > 90) throw new Error("Latitude must be between -90 and 90.");
+  if (lon < -180 || lon > 180) throw new Error("Longitude must be between -180 and 180.");
   return { lat, lon };
 }

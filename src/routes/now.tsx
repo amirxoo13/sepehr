@@ -46,7 +46,7 @@ function NowPage() {
       <header className="flex flex-col gap-2">
         <h1 className="font-display text-3xl tracking-tight">{t(locale, "skyNow")}</h1>
         <p className="text-sm text-muted">
-          {locale === "fa" ? "خانه‌های پلاسیدوس برای مختصات انتخاب‌شده، همین لحظه." : "Placidus houses for the chosen coordinates, right now."}
+          {t(locale, "nowHint")}
         </p>
       </header>
 

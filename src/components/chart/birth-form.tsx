@@ -1,6 +1,5 @@
 import { toGregorian, toJalaali } from "jalaali-js";
 import { useMemo, useState } from "react";
-import { EINSTEIN, SHIRAZ_1970, BEHNOUSH } from "@/lib/astro/chart";
 import { CITIES, looksLikeCoordinates, parseCoordinates, searchCities } from "@/lib/astro/cities";
 import { HOUSE_SYSTEMS, type ChartMode, type HouseSystemId } from "@/lib/astro/constants";
 import { geocodePlace } from "@/lib/astro/geocode.functions";
@@ -45,29 +44,6 @@ function emptyDraft(): BirthDraft {
     place: tehran
       ? { name: `${tehran.name}, ${tehran.country}`, lat: tehran.lat, lon: tehran.lon, tz: tehran.tz }
       : null,
-  };
-}
-
-function fromInput(input: BirthInput): BirthDraft {
-  const [gy, gm, gd] = input.date.split("-");
-  const [hour, minute] = input.time.split(":");
-  return {
-    name: input.name,
-    gy: gy ?? "1990",
-    gm: gm ?? "01",
-    gd: gd ?? "01",
-    hour: hour ?? "12",
-    minute: minute ?? "00",
-    timeUnknown: Boolean(input.timeUnknown),
-    cityQuery: input.locationName,
-    houseSystem: input.houseSystem ?? "P",
-    tzMode: input.timezone === "LMT" ? "lmt" : "iana",
-    place: {
-      name: input.locationName,
-      lat: input.latitude,
-      lon: input.longitude,
-      tz: input.timezone === "LMT" ? "UTC" : input.timezone,
-    },
   };
 }
 
@@ -386,16 +362,6 @@ export function BirthForm({
   const [asOfTime, setAsOfTime] = useState("12:00");
   const [srYear, setSrYear] = useState(() => String(today.getUTCFullYear()));
 
-  function applyEinstein() {
-    setA(fromInput(EINSTEIN));
-  }
-  function applyShiraz() {
-    setA(fromInput(SHIRAZ_1970));
-  }
-  function applyBehnoush() {
-    setA(fromInput(BEHNOUSH));
-  }
-
   const needsAsOf = mode === "transit" || mode === "progressed";
   const needsYear = mode === "solar_return";
 
@@ -443,22 +409,13 @@ export function BirthForm({
 
       {error && <p className="text-sm text-danger">{tx(locale, error)}</p>}
 
-      <div className="flex flex-wrap gap-2">
+      <div>
         <Button type="submit" disabled={busy}>
           {busy ? t(locale, "calculating") : t(locale, "calculate")}
-        </Button>
-        <Button type="button" variant="secondary" onClick={applyEinstein}>
-          {t(locale, "einstein")}
-        </Button>
-        <Button type="button" variant="secondary" onClick={applyShiraz}>
-          {t(locale, "shirazDemo")}
-        </Button>
-        <Button type="button" variant="secondary" onClick={applyBehnoush}>
-          {t(locale, "behnoushDemo")}
         </Button>
       </div>
     </form>
   );
 }
 
-export { emptyDraft, fromInput, toInput };
+export { emptyDraft, toInput };

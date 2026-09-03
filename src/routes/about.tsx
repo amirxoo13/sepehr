@@ -7,7 +7,7 @@ export const Route = createFileRoute("/about")({ component: About });
 
 const PARAS = [
   "Sepehr is the computational front of the same astrology platform as the Telegram bot: Swiss Ephemeris, tropical zodiac, Placidus houses, API orbs, LMT before 1900, and the synastry / composite / solar-return / secondary-progression algorithms. Pythagorean numerology (life path, birth number, personal year, Hungarian digit grid) is a separate digit method from the civil date — not astronomy.",
-  "The Einstein demo uses the repository fixture: Ulm, 14 March 1879, 11:30, Europe/Berlin, Placidus. For other pre-1900 births the default is birthplace LMT — matching the bot.",
+  "For births before 1900 the default timezone is birthplace Local Mean Time (longitude ÷ 15). After 1900 the civil IANA zone of the place is used.",
   "The traditional reading is a keyword list, not a prediction. The optional deep reading is generated from these computed positions only.",
 ];
 

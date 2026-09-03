@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Glyph } from "@/components/chart/glyphs";
-import { NatalWheel } from "@/components/chart/natal-wheel";
+import { EmptyWheel } from "@/components/chart/natal-wheel";
 import { Constellation } from "@/components/decor/constellations";
 import {
   IconArmillary,
@@ -19,12 +17,8 @@ import {
 } from "@/components/icons/astro-icons";
 import { useLocale } from "@/components/layout/locale-provider";
 import { Button } from "@/components/ui/button";
-import { computeNatal, EINSTEIN } from "@/lib/astro/chart";
-import { PLANET_COLOR } from "@/lib/astro/chart-theme";
 import type { ChartMode } from "@/lib/astro/constants";
-import { isRtl, t, tx } from "@/lib/astro/i18n";
-import { planetId } from "@/lib/astro/math";
-import type { ChartResult } from "@/lib/astro/types";
+import { isRtl, t } from "@/lib/astro/i18n";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -45,33 +39,10 @@ const MODES: {
 
 function Home() {
   const { locale } = useLocale();
-  const [demo, setDemo] = useState<ChartResult | null>(null);
-  const [demoError, setDemoError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void computeNatal(EINSTEIN)
-      .then((chart) => {
-        if (!cancelled) setDemo(chart);
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setDemoError(e instanceof Error ? e.message : t(locale, "error"));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [locale]);
-
-  const sun = demo?.positions.find((p) => planetId(p) === "SUN");
-  const moon = demo?.positions.find((p) => planetId(p) === "MOON");
 
   return (
     <main>
-      {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="relative">
-        {/* Two constellations anchor the hero corners — real star
-            positions, so the page is decorated with the sky itself
-            rather than with generic sparkles. */}
         <Constellation
           figure="ursaMajor"
           className="pointer-events-none absolute -top-4 start-[-4%] hidden h-40 w-64 opacity-[0.22] lg:block"
@@ -121,7 +92,6 @@ function Home() {
             </div>
           </div>
 
-          {/* Demo wheel, mounted like an instrument on a plate */}
           <div className="plate panel relative p-3">
             <div
               aria-hidden
@@ -131,64 +101,12 @@ function Home() {
                   "radial-gradient(60% 50% at 50% 0%, color-mix(in oklab, var(--color-gold) 16%, transparent), transparent 70%)",
               }}
             />
-            {demo ? (
-              <>
-                <NatalWheel chart={demo} locale={locale} compact />
-                <p className="px-2 pt-1 text-center text-xs text-muted">
-                  {t(locale, "demoCaption")}
-                </p>
-                <div className="mt-3 grid grid-cols-3 gap-2 px-1 pb-1 font-mono text-xs">
-                  <LiveStat
-                    label="ASC"
-                    color="var(--color-gold)"
-                    value={
-                      <>
-                        {Math.floor(demo.ascendant % 30)}°
-                        <Glyph name={signGlyph(demo.ascendant)} size={14} />
-                      </>
-                    }
-                  />
-                  {sun && (
-                    <LiveStat
-                      label={t(locale, "sun")}
-                      color={PLANET_COLOR.SUN}
-                      value={
-                        <>
-                          {Math.floor(sun.degree_in_sign)}°
-                          <Glyph name={String(sun.sign)} size={14} />
-                          <span>{tx(locale, String(sun.sign))}</span>
-                        </>
-                      }
-                    />
-                  )}
-                  {moon && (
-                    <LiveStat
-                      label={t(locale, "moon")}
-                      color={PLANET_COLOR.MOON}
-                      value={
-                        <>
-                          {Math.floor(moon.degree_in_sign)}°
-                          <Glyph name={String(moon.sign)} size={14} />
-                          <span>{tx(locale, String(moon.sign))}</span>
-                        </>
-                      }
-                    />
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex min-h-80 items-center justify-center gap-3 p-8 text-sm text-muted">
-                {!demoError && (
-                  <IconArmillary size={18} className="animate-spin text-gold [animation-duration:6s]" />
-                )}
-                {demoError ?? t(locale, "loadEngine")}
-              </div>
-            )}
+            <EmptyWheel compact />
+            <p className="px-2 pt-1 pb-2 text-center text-xs text-muted">{t(locale, "wheelCaption")}</p>
           </div>
         </div>
       </section>
 
-      {/* ── Three pillars ───────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-10">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Feature
@@ -214,7 +132,6 @@ function Home() {
         </div>
       </section>
 
-      {/* ── Six calculation modes ───────────────────────────────── */}
       <section className="relative mx-auto max-w-6xl px-4 py-12">
         <Constellation
           figure="cassiopeia"
@@ -230,7 +147,6 @@ function Home() {
               search={{ mode }}
               className="panel group relative overflow-hidden p-5 transition-transform duration-200 hover:-translate-y-0.5"
             >
-              {/* gold wash that lights up on hover */}
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -256,7 +172,6 @@ function Home() {
         </div>
       </section>
 
-      {/* ── Provenance ──────────────────────────────────────────── */}
       <section className="relative mx-auto max-w-6xl px-4 pb-20">
         <Constellation
           figure="lyra"
@@ -285,36 +200,6 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
     <div className="flex items-center gap-4">
       <h2 className="font-display text-3xl tracking-tight whitespace-nowrap">{children}</h2>
       <span className="rule-fade flex-1" />
-    </div>
-  );
-}
-
-function signGlyph(lon: number) {
-  const signs = [
-    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-  ];
-  return signs[Math.floor((((lon % 360) + 360) % 360) / 30)]!;
-}
-
-function LiveStat({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: React.ReactNode;
-  color: string;
-}) {
-  return (
-    <div className="rounded-md border border-border bg-surface/40 px-2 py-2 text-center">
-      <p className="text-[0.65rem] tracking-wider text-subtle uppercase">{label}</p>
-      <div
-        className="mt-1 flex flex-wrap items-center justify-center gap-1"
-        style={{ color }}
-      >
-        {value}
-      </div>
     </div>
   );
 }

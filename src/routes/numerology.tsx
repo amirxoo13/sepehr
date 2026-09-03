@@ -4,24 +4,18 @@ import { useMemo, useState } from "react";
 import { NumerologyReportView } from "@/components/chart/numerology-report";
 import { IconGrid } from "@/components/icons/astro-icons";
 import { useLocale } from "@/components/layout/locale-provider";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BEHNOUSH } from "@/lib/astro/chart";
 import { isoOf, numerologyOf, pad2 } from "@/lib/astro/numerology";
 import { t, tx } from "@/lib/astro/i18n";
 
 export const Route = createFileRoute("/numerology")({ component: NumerologyPage });
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function NumerologyPage() {
   const { locale } = useLocale();
-  const [name, setName] = useState("Behnoush Kazemi");
-  const [date, setDate] = useState(BEHNOUSH.date);
-  const [asOf, setAsOf] = useState(todayIso);
+  const [name, setName] = useState("");
+  const [date, setDate] = useState("");
+  const [asOf, setAsOf] = useState("");
   const [cal, setCal] = useState<"g" | "j">("g");
 
   const jalali = useMemo(() => {
@@ -35,17 +29,13 @@ function NumerologyPage() {
   }, [date]);
 
   const report = useMemo(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     try {
-      return numerologyOf(date, asOf, name);
+      return numerologyOf(date, asOf || undefined, name);
     } catch {
       return null;
     }
   }, [date, asOf, name]);
-
-  function applyBehnoush() {
-    setName(BEHNOUSH.name);
-    setDate(BEHNOUSH.date);
-  }
 
   function setJalali(jy: number, jm: number, jd: number) {
     try {
@@ -121,11 +111,6 @@ function NumerologyPage() {
           <Label>{t(locale, "asOf")}</Label>
           <Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
         </label>
-        <div className="flex flex-wrap gap-2 sm:col-span-2">
-          <Button type="button" variant="secondary" onClick={applyBehnoush}>
-            {t(locale, "behnoushDemo")}
-          </Button>
-        </div>
       </form>
 
       {report ? (
@@ -133,7 +118,7 @@ function NumerologyPage() {
           <NumerologyReportView report={report} locale={locale} />
         </div>
       ) : (
-        <p className="mt-8 text-sm text-danger">{t(locale, "error")}</p>
+        <p className="mt-8 text-sm text-muted">{t(locale, "enterDate")}</p>
       )}
     </main>
   );

@@ -576,6 +576,119 @@ export function NatalWheel({
   );
 }
 
+/** Decorative tropical wheel with no natal data — twelve signs only. */
+export function EmptyWheel({
+  className,
+  compact = true,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
+  const uid = useId().replace(/:/g, "");
+  const T = wheelTheme("night");
+  const size = compact ? 560 : 840;
+  const cx = size / 2;
+  const cy = size / 2;
+  const asc = 0;
+  const R = {
+    rim: size * 0.478,
+    degOuter: size * 0.452,
+    degInner: size * 0.418,
+    signInner: size * 0.352,
+    hub: size * 0.034,
+  };
+  const pad = compact ? 20 : 40;
+  const rimId = `empty-rim-${uid}`;
+
+  return (
+    <div
+      className={cn(
+        "relative mx-auto w-full overflow-visible",
+        compact ? "max-w-[420px]" : "max-w-[840px]",
+        className,
+      )}
+      dir="ltr"
+    >
+      <svg
+        viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
+        className="h-auto w-full overflow-visible"
+        role="img"
+        aria-label="Empty tropical wheel"
+        style={{ background: T.paper }}
+      >
+        <defs>
+          <linearGradient id={rimId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={T.rim} />
+            <stop offset="45%" stopColor={T.rim} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={T.rim} stopOpacity="0.9" />
+          </linearGradient>
+        </defs>
+        <rect x={-pad} y={-pad} width={size + pad * 2} height={size + pad * 2} fill={T.paper} />
+        <circle cx={cx} cy={cy} r={R.rim} fill="none" stroke={`url(#${rimId})`} strokeWidth="2.2" />
+        <circle cx={cx} cy={cy} r={R.degOuter} fill="none" stroke={T.rim} strokeWidth="0.9" opacity="0.7" />
+        <circle cx={cx} cy={cy} r={R.degInner} fill="none" stroke={T.rim} strokeWidth="0.9" opacity="0.7" />
+        <circle cx={cx} cy={cy} r={R.signInner} fill="none" stroke={T.rim} strokeWidth="1.1" opacity="0.85" />
+        {ZODIAC_SIGNS.map((sign, i) => {
+          const start = i * 30;
+          const end = start + 30;
+          const el = SIGN_ELEMENT[sign] ?? "fire";
+          const tint = T.element[el];
+          const mid = polar(cx, cy, (R.degInner + R.signInner) / 2, chartToDrawingAngle(start + 15, asc));
+          const a0 = chartToDrawingAngle(start, asc);
+          const s0 = polar(cx, cy, R.degInner, a0);
+          const s1 = polar(cx, cy, R.signInner, a0);
+          return (
+            <g key={sign}>
+              <path
+                d={sectorPath(asc, start, end, R.signInner, R.degInner, cx, cy)}
+                fill={tint}
+                opacity="0.11"
+              />
+              <line x1={s0.x} y1={s0.y} x2={s1.x} y2={s1.y} stroke={T.rim} strokeWidth="1" opacity="0.75" />
+              <GlyphAt name={sign} x={mid.x} y={mid.y} size={compact ? 17 : 24} color={T.signs[sign] ?? T.ink} />
+            </g>
+          );
+        })}
+        {Array.from({ length: 12 }, (_, i) => {
+          const a = chartToDrawingAngle(i * 30, asc);
+          const p0 = polar(cx, cy, R.signInner, a);
+          const p1 = polar(cx, cy, R.hub * 4, a);
+          return (
+            <line
+              key={i}
+              x1={p0.x}
+              y1={p0.y}
+              x2={p1.x}
+              y2={p1.y}
+              stroke={T.rim}
+              strokeWidth={i % 3 === 0 ? 1.2 : 0.6}
+              opacity={i % 3 === 0 ? 0.55 : 0.28}
+            />
+          );
+        })}
+        <circle cx={cx} cy={cy} r={R.hub} fill={T.rim} opacity="0.85" />
+        {(() => {
+          const p = polar(cx, cy, R.rim + size * 0.032, 180);
+          return (
+            <text
+              x={p.x}
+              y={p.y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={T.axis}
+              fontSize={size * 0.026}
+              fontFamily="ui-sans-serif, system-ui, sans-serif"
+              letterSpacing="0.12em"
+            >
+              ASC
+            </text>
+          );
+        })()}
+      </svg>
+    </div>
+  );
+}
+
 export function downloadWheelSvg(
   svg: SVGSVGElement | null,
   filename: string,

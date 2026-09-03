@@ -63,13 +63,16 @@ export function IconArmillary(p: IconProps) {
 
 /** House wheel — twelve divisions with a marked ascendant. */
 export function IconWheel(p: IconProps) {
+  // Pre-rounded so SSR and the browser emit identical attribute strings
+  // (raw cos/sin produced a 1e-15 hydration mismatch on y2).
   const spokes = Array.from({ length: 12 }, (_, i) => {
     const a = (i * 30 * Math.PI) / 180;
+    const r = (n: number) => Number(n.toFixed(3));
     return {
-      x1: 12 + Math.cos(a) * 5.4,
-      y1: 12 - Math.sin(a) * 5.4,
-      x2: 12 + Math.cos(a) * 9,
-      y2: 12 - Math.sin(a) * 9,
+      x1: r(12 + Math.cos(a) * 5.4),
+      y1: r(12 - Math.sin(a) * 5.4),
+      x2: r(12 + Math.cos(a) * 9),
+      y2: r(12 - Math.sin(a) * 9),
     };
   });
   return (

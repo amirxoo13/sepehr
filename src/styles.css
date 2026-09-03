@@ -90,12 +90,12 @@
 
   body {
     font-family: var(--font-body);
-    /* base sky gradient — the animated canvas layers on top of this */
+    /* Static sky wash. `background-attachment: fixed` was forcing a
+       full-viewport repaint on every scroll tick — that's gone. */
     background:
       radial-gradient(120% 90% at 78% -10%, color-mix(in oklab, var(--color-nebula-deep) 55%, transparent), transparent 62%),
       radial-gradient(100% 80% at 8% 110%, color-mix(in oklab, #1b3b6b 45%, transparent), transparent 58%),
       linear-gradient(180deg, var(--color-void), var(--color-bg) 42%, var(--color-void));
-    background-attachment: fixed;
     color: var(--color-fg);
     min-height: 100dvh;
   }
@@ -162,15 +162,12 @@
   50% { background-position: 100% 50%; }
 }
 
-/* Glass panel with a gold hairline — the workhorse surface. */
+/* Instrument plate. No backdrop-filter: blurring a moving starfield
+   under every card is what made scroll hitch. Opacity is high enough
+   that type stays readable without sampling the canvas underneath. */
 .panel {
   position: relative;
-  background:
-    linear-gradient(180deg,
-      color-mix(in oklab, var(--color-surface) 78%, transparent),
-      color-mix(in oklab, var(--color-bg-elevated) 82%, transparent));
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  background: color-mix(in oklab, var(--color-surface) 94%, black);
   box-shadow: var(--shadow-lift), var(--shadow-border);
   border-radius: var(--radius-lg);
 }
@@ -215,18 +212,19 @@
   50% { opacity: 1; }
 }
 
-/* Faint drifting nebula clouds, layered behind content. */
+/* Soft nebula — GPU opacity/translate only. A CSS `filter: blur()`
+   combined with `scale()` re-rasterized the layer every frame. */
 .nebula {
   background:
-    radial-gradient(38% 46% at 22% 32%, color-mix(in oklab, var(--color-nebula) 34%, transparent), transparent 70%),
-    radial-gradient(42% 38% at 78% 62%, color-mix(in oklab, #2a5f8f 30%, transparent), transparent 72%),
-    radial-gradient(30% 34% at 58% 12%, color-mix(in oklab, var(--color-ember) 14%, transparent), transparent 74%);
-  filter: blur(18px);
+    radial-gradient(42% 50% at 22% 32%, color-mix(in oklab, var(--color-nebula) 28%, transparent), transparent 70%),
+    radial-gradient(46% 42% at 78% 62%, color-mix(in oklab, #2a5f8f 24%, transparent), transparent 72%),
+    radial-gradient(34% 38% at 58% 12%, color-mix(in oklab, var(--color-ember) 12%, transparent), transparent 74%);
   animation: nebula-drift 90s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 @keyframes nebula-drift {
-  from { transform: scale(1) translate3d(0, 0, 0); opacity: 0.55; }
-  to   { transform: scale(1.14) translate3d(-2%, 1.5%, 0); opacity: 0.8; }
+  from { transform: translate3d(0, 0, 0); opacity: 0.55; }
+  to   { transform: translate3d(-2%, 1.2%, 0); opacity: 0.8; }
 }
 
 /* Gold-rimmed focus ring used across interactive elements. */

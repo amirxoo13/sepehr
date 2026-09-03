@@ -22,7 +22,7 @@ const buttonVariants = cva(
           "hover:bg-[position:100%_50%] hover:shadow-[0_10px_30px_-10px_var(--color-gold)]",
         ].join(" "),
         secondary:
-          "bg-surface-2/70 text-fg shadow-border backdrop-blur-sm hover:bg-surface-3/70 hover:shadow-[var(--shadow-glow)]",
+          "bg-surface-2 text-fg shadow-border hover:bg-surface-3 hover:shadow-[var(--shadow-glow)]",
         outline:
           "bg-transparent text-fg shadow-border hover:bg-surface-2/60 hover:text-gold",
         ghost: "text-muted hover:bg-surface-2/60 hover:text-gold",

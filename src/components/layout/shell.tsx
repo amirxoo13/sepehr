@@ -26,7 +26,7 @@ export function Shell({
     <div className="relative flex min-h-dvh flex-col text-fg">
       <Cosmos />
 
-      <header className="sticky top-0 z-30 border-b border-border bg-bg/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-border bg-bg/92">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <Link to="/" className="group flex items-center gap-2.5">
             <IconArmillary

@@ -1,52 +1,27 @@
 /**
- * Cosmos — the animated night-sky backdrop for the whole app.
+ * Cosmos — night-sky backdrop.
  *
- * Three stacked layers, all `fixed` and `pointer-events-none`:
- *   1. CSS nebula clouds (cheap, blurred, slowly drifting)
- *   2. An optional looping <video> (self-hosted; see VIDEO_SRC below)
- *   3. A canvas starfield: three parallax depths, per-star twinkle,
- *      occasional meteors, and a slow global drift.
+ * Cost model (this is what made scroll hitch):
+ *  · A 2×-DPR full-viewport canvas redrawing 720 arcs + radial
+ *    gradients at 60 fps, sitting *under* every `.panel` that then
+ *    re-blurred that moving buffer via backdrop-filter.
+ *  · A CSS `filter: blur(18px)` nebula that was also being scaled,
+ *    so the blur had to be re-rasterized every frame.
  *
- * Design notes
- * ────────────
- * The canvas is deliberately *not* a particle toy: star sizes follow a
- * magnitude distribution (many faint, few bright), colours run along a
- * real stellar temperature ramp (blue-white → white → gold → amber), and
- * the brightest stars get a four-point diffraction cross the way they
- * appear on a long exposure. That's what separates this from the usual
- * "random white dots" background.
- *
- * Performance
- * ───────────
- * - Star count scales with viewport area and is capped.
- * - Rendering pauses when the tab is hidden.
- * - `prefers-reduced-motion` renders one static frame and stops.
- * - Runs on a devicePixelRatio-capped backing store (max 2).
+ * The sky is now a static offscreen starfield (drawn once) plus a
+ * handful of twinkling luminaries and the occasional meteor. The
+ * canvas pauses while the user is scrolling so it never fights the
+ * compositor. Nebula is a GPU-only opacity/translate, no CSS filter.
  */
 import { useEffect, useRef } from "react";
 
-/**
- * Optional video layer.
- *
- * Leave as `null` to use the canvas starfield alone (recommended: it is
- * ~20 KB of JS instead of a multi-megabyte download, works offline, and
- * never blocks first paint).
- *
- * To use a video instead, put an MP4/WebM in `public/` and set this to
- * e.g. "/sky.mp4". Do NOT hot-link a video from another site: it breaks
- * when they change the URL, costs them bandwidth, and is usually a
- * licence violation. Free, properly-licensed loops are on Pexels,
- * Pixabay and NASA's public-domain library.
- */
 const VIDEO_SRC: string | null = null;
 
 type Star = {
   x: number;
   y: number;
   r: number;
-  depth: number;
   hue: string;
-  /** twinkle phase + speed */
   phase: number;
   speed: number;
   base: number;
@@ -62,26 +37,14 @@ type Meteor = {
   len: number;
 };
 
-/** Stellar colour ramp, roughly O→M spectral classes. */
-const STAR_COLORS = [
-  "#cfe3ff", // hot blue-white
-  "#e6efff",
-  "#ffffff",
-  "#fff6e2",
-  "#ffe9bd", // gold
-  "#ffd9a3",
-  "#ffc48a", // amber
-];
+const STAR_COLORS = ["#cfe3ff", "#e6efff", "#ffffff", "#fff6e2", "#ffe9bd", "#ffd9a3", "#ffc48a"];
 
 function pickColor(rand: () => number) {
-  // Weight toward white/gold so the field reads warm, not clinical.
   const t = rand();
-  const i =
-    t < 0.08 ? 0 : t < 0.2 ? 1 : t < 0.52 ? 2 : t < 0.76 ? 3 : t < 0.9 ? 4 : t < 0.97 ? 5 : 6;
+  const i = t < 0.08 ? 0 : t < 0.2 ? 1 : t < 0.52 ? 2 : t < 0.76 ? 3 : t < 0.9 ? 4 : t < 0.97 ? 5 : 6;
   return STAR_COLORS[i]!;
 }
 
-/** Deterministic PRNG so the sky is identical between SSR reloads. */
 function mulberry32(seed: number) {
   let a = seed;
   return () => {
@@ -99,22 +62,26 @@ export function Cosmos() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: true });
+    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!ctx) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
 
     let w = 0;
     let h = 0;
     let dpr = 1;
-    let stars: Star[] = [];
+    let plate: HTMLCanvasElement | null = null;
+    let twinklers: Star[] = [];
     let meteors: Meteor[] = [];
     let raf = 0;
     let running = true;
+    let scrolling = false;
     let t0 = performance.now();
+    let lastDraw = 0;
 
     function build() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1 : 1.25);
       w = window.innerWidth;
       h = window.innerHeight;
       canvas!.width = Math.floor(w * dpr);
@@ -123,27 +90,67 @@ export function Cosmos() {
       canvas!.style.height = `${h}px`;
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const density = 0.00016; // stars per px²
-      const count = Math.min(720, Math.max(150, Math.round(w * h * density)));
+      const cap = coarse ? 160 : 280;
+      const count = Math.min(cap, Math.max(90, Math.round(w * h * 0.00007)));
       const rand = mulberry32(20260903);
+      const field: Star[] = [];
+      twinklers = [];
 
-      stars = Array.from({ length: count }, () => {
-        const depth = rand();
-        // Magnitude distribution: r^3 makes bright stars genuinely rare.
+      for (let i = 0; i < count; i++) {
         const m = rand();
-        const r = 0.35 + Math.pow(m, 3) * 1.9;
-        return {
+        const r = 0.35 + Math.pow(m, 3) * 1.7;
+        const s: Star = {
           x: rand() * w,
           y: rand() * h,
           r,
-          depth,
           hue: pickColor(rand),
           phase: rand() * Math.PI * 2,
-          speed: 0.4 + rand() * 1.5,
-          base: 0.25 + rand() * 0.6,
+          speed: 0.4 + rand() * 1.2,
+          base: 0.28 + rand() * 0.55,
         };
-      });
+        if (r > 1.35) twinklers.push(s);
+        else field.push(s);
+      }
+
+      plate = document.createElement("canvas");
+      plate.width = canvas!.width;
+      plate.height = canvas!.height;
+      const pctx = plate.getContext("2d");
+      if (!pctx) return;
+      pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      for (const s of field) {
+        pctx.globalAlpha = s.base;
+        pctx.fillStyle = s.hue;
+        const d = Math.max(0.7, s.r * 2);
+        pctx.fillRect(s.x - d / 2, s.y - d / 2, d, d);
+      }
+      // Bake the bright-star cores onto the plate too, so a paused frame
+      // still looks complete. Twinklers overlay a halo on top.
+      for (const s of twinklers) {
+        pctx.globalAlpha = s.base;
+        pctx.fillStyle = s.hue;
+        pctx.beginPath();
+        pctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        pctx.fill();
+      }
+      pctx.globalAlpha = 1;
       meteors = [];
+      blit(1);
+    }
+
+    function blit(twinkleAmp: number) {
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.clearRect(0, 0, w, h);
+      if (plate) ctx!.drawImage(plate, 0, 0, w, h);
+      for (const s of twinklers) {
+        const tw = 0.55 + 0.45 * Math.sin(twinkleAmp * s.speed + s.phase);
+        ctx!.globalAlpha = s.base * tw * 0.45;
+        ctx!.fillStyle = s.hue;
+        ctx!.beginPath();
+        ctx!.arc(s.x, s.y, s.r * 4.2, 0, Math.PI * 2);
+        ctx!.fill();
+      }
+      ctx!.globalAlpha = 1;
     }
 
     function spawnMeteor() {
@@ -161,83 +168,39 @@ export function Cosmos() {
       });
     }
 
-    function drawStar(s: Star, alpha: number, driftX: number, driftY: number) {
-      const px = (s.x + driftX * (0.3 + s.depth)) % w;
-      const py = (s.y + driftY * (0.3 + s.depth)) % h;
-      const x = px < 0 ? px + w : px;
-      const y = py < 0 ? py + h : py;
-
-      ctx!.globalAlpha = alpha;
-      ctx!.fillStyle = s.hue;
-      ctx!.beginPath();
-      ctx!.arc(x, y, s.r, 0, Math.PI * 2);
-      ctx!.fill();
-
-      // Bright stars get a soft halo + diffraction cross.
-      if (s.r > 1.55) {
-        const g = ctx!.createRadialGradient(x, y, 0, x, y, s.r * 7);
-        g.addColorStop(0, s.hue);
-        g.addColorStop(1, "transparent");
-        ctx!.globalAlpha = alpha * 0.22;
-        ctx!.fillStyle = g;
-        ctx!.beginPath();
-        ctx!.arc(x, y, s.r * 7, 0, Math.PI * 2);
-        ctx!.fill();
-
-        const spike = s.r * 5.5;
-        ctx!.globalAlpha = alpha * 0.35;
-        ctx!.strokeStyle = s.hue;
-        ctx!.lineWidth = 0.6;
-        ctx!.beginPath();
-        ctx!.moveTo(x - spike, y);
-        ctx!.lineTo(x + spike, y);
-        ctx!.moveTo(x, y - spike);
-        ctx!.lineTo(x, y + spike);
-        ctx!.stroke();
-      }
-    }
-
     function frame(now: number) {
-      if (!running) return;
+      if (!running || scrolling) return;
+      // ~24 fps is plenty for a backdrop and leaves the compositor free.
+      if (now - lastDraw < 40) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      lastDraw = now;
       const elapsed = (now - t0) / 1000;
-      ctx!.clearRect(0, 0, w, h);
+      blit(elapsed);
 
-      // Very slow global drift: a full pass takes ~25 minutes.
-      const driftX = reduced ? 0 : elapsed * 0.9;
-      const driftY = reduced ? 0 : elapsed * 0.22;
+      if (meteors.length < 1 && Math.random() < 0.0018) spawnMeteor();
+      meteors = meteors.filter((m) => {
+        m.x += m.vx;
+        m.y += m.vy;
+        m.life += 1.6;
+        const k = 1 - m.life / m.max;
+        if (k <= 0) return false;
+        const hyp = Math.hypot(m.vx, m.vy) || 1;
+        const tailX = m.x - (m.vx / hyp) * m.len;
+        const tailY = m.y - (m.vy / hyp) * m.len;
+        ctx!.globalAlpha = 0.85 * k;
+        ctx!.strokeStyle = "rgba(255,244,214,0.9)";
+        ctx!.lineWidth = 1.4;
+        ctx!.lineCap = "round";
+        ctx!.beginPath();
+        ctx!.moveTo(m.x, m.y);
+        ctx!.lineTo(tailX, tailY);
+        ctx!.stroke();
+        ctx!.globalAlpha = 1;
+        return true;
+      });
 
-      for (const s of stars) {
-        const tw = reduced ? 1 : 0.55 + 0.45 * Math.sin(elapsed * s.speed + s.phase);
-        drawStar(s, s.base * tw, driftX, driftY);
-      }
-
-      if (!reduced) {
-        if (meteors.length < 2 && Math.random() < 0.0022) spawnMeteor();
-        meteors = meteors.filter((m) => {
-          m.x += m.vx;
-          m.y += m.vy;
-          m.life += 1;
-          const k = 1 - m.life / m.max;
-          if (k <= 0) return false;
-          const tailX = m.x - (m.vx / Math.hypot(m.vx, m.vy)) * m.len;
-          const tailY = m.y - (m.vy / Math.hypot(m.vx, m.vy)) * m.len;
-          const g = ctx!.createLinearGradient(m.x, m.y, tailX, tailY);
-          g.addColorStop(0, `rgba(255,244,214,${0.85 * k})`);
-          g.addColorStop(1, "rgba(255,244,214,0)");
-          ctx!.globalAlpha = 1;
-          ctx!.strokeStyle = g;
-          ctx!.lineWidth = 1.6;
-          ctx!.lineCap = "round";
-          ctx!.beginPath();
-          ctx!.moveTo(m.x, m.y);
-          ctx!.lineTo(tailX, tailY);
-          ctx!.stroke();
-          return true;
-        });
-      }
-
-      ctx!.globalAlpha = 1;
-      if (reduced) return; // one static frame is enough
       raf = requestAnimationFrame(frame);
     }
 
@@ -255,32 +218,44 @@ export function Cosmos() {
     let resizeTimer: ReturnType<typeof setTimeout>;
     function onResize() {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        build();
-        if (reduced) requestAnimationFrame(frame);
-      }, 160);
+      resizeTimer = setTimeout(build, 180);
+    }
+
+    let scrollTimer: ReturnType<typeof setTimeout>;
+    function onScroll() {
+      scrolling = true;
+      cancelAnimationFrame(raf);
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        scrolling = false;
+        if (running && !reduced) raf = requestAnimationFrame(frame);
+      }, 140);
     }
 
     build();
-    raf = requestAnimationFrame(frame);
-    window.addEventListener("resize", onResize);
+    if (!reduced) raf = requestAnimationFrame(frame);
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       running = false;
       cancelAnimationFrame(raf);
       clearTimeout(resizeTimer);
+      clearTimeout(scrollTimer);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      {/* 1 — nebula clouds */}
-      <div className="nebula absolute -inset-[10%] opacity-70" />
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden [contain:strict]"
+    >
+      <div className="nebula absolute -inset-[8%] opacity-60" />
 
-      {/* 2 — optional self-hosted video loop */}
       {VIDEO_SRC ? (
         <video
           className="absolute inset-0 size-full object-cover opacity-35 mix-blend-screen"
@@ -293,10 +268,8 @@ export function Cosmos() {
         />
       ) : null}
 
-      {/* 3 — canvas starfield */}
       <canvas ref={canvasRef} className="absolute inset-0 size-full" />
 
-      {/* 4 — vignette so text always sits on a calm ground */}
       <div
         className="absolute inset-0"
         style={{

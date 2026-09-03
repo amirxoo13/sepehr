@@ -271,7 +271,7 @@ export function ChartReportView({
 
   return (
     <div className="flex flex-col gap-10">
-      <nav className="sticky top-14 z-20 -mx-1 overflow-x-auto bg-bg/90 px-1 py-2 backdrop-blur-sm">
+      <nav className="sticky top-14 z-20 -mx-1 overflow-x-auto bg-bg/92 px-1 py-2">
         <ul className="flex min-w-max gap-1">
           {toc.map((item) => (
             <li key={item.id}>
